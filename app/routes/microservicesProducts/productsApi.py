@@ -18,12 +18,11 @@ def update_current_product(id):
 @products_api.route('/delete_all_products', methods=['DELETE'])
 def delete_all_products():
     print("DELETE /products endpoint reached")
-    products_deleted = delete_all_products()
+    products_deleted = delete_all()
     if products_deleted:
         return jsonify({'message': 'Products deleted successfully'}), 200
     else:
         return jsonify({'message': 'Error deleting products'}), 400
-
 @products_api.route('/delete_product_by_id/<int:id>', methods=['DELETE'])
 def delete_product(id):
     print("DELETE /product endpoint reached", id)
@@ -64,11 +63,10 @@ def get_products():
         }), 200
     else:    
         return jsonify({"message": "Productos no encontrados"}), 404
-
 @products_api.route('/get_product/<string:name>', methods=['GET'])
 def get_product(name):
     print("GET /product endpoint reached")
-    product = get_product(name)
+    product = get_product_by_name(name)
     if product:
         return jsonify({
             "message": "Producto encontrado",
@@ -76,11 +74,10 @@ def get_product(name):
         }), 200
     else:    
         return jsonify({"message": "Producto no encontrado"}), 404
-
 @products_api.route('/get_product_by_id/<int:id>', methods=['GET'])
 def get_product_by_id(id):
     print("GET /product endpoint reached")
-    product = get_product_by_id(id)
+    product = get_by_id(id)
     if product:
         return jsonify({
             
@@ -90,16 +87,12 @@ def get_product_by_id(id):
         return jsonify({
             "message": "Producto no encontrado"
             }), 404
-        
-
 @products_api.route('/create_product', methods=['POST'])
 def add_product():
-
-    print("POST /product-add endpoint reached")
     data = request.get_json()
     if data:
         print(f"POST /product-add endpoint reached {data}")
-        logger.info(f"Producto recibido: {data}")
+        logger.info(f"POST /product-add endpoint reached input:{data}")
         product_saved = create_new_product(data)
         logger.info(f"Producto guardado: {product_saved}")
         if product_saved:
@@ -113,7 +106,6 @@ def add_product():
         return jsonify({"message": "No se recibió información válida"}), 400
     
     
-
 def delete_product_by_id(id):
         try:
             product = Product.query.filter_by(id=id).first()
@@ -162,6 +154,12 @@ def get_product_by_name(name):
         except SQLAlchemyError as e:
             logger.error(f"Error al obtener producto por nombre: {str(e)}")
             return None
+def  get_by_id(id):
+        try:
+            return Product.query.filter_by(id=id).first()
+        except SQLAlchemyError as e:
+            logger.error(f"Error al obtener producto por ID: {str(e)}")
+            return None 
 
 def create_new_product(data):
         try:

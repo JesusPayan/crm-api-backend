@@ -6,7 +6,9 @@ from app import db
 contracts_api = Blueprint('contractsApi', __name__)
 
 
-@contracts_api.route('v1/contracts', methods=['POST'])
+print("✅ contractsApi cargado correctamente")
+
+@contracts_api.route('/add_contract', methods=['POST'])
 def add_contract():
     print("POST /contract-add endpoint reached")
     data = request.get_json()
@@ -75,7 +77,7 @@ def get_contract_by_id(self, id):
         logger.error(f"Error al obtener contrato por ID: {str(e)}")
         return None
 
-def create_new_contract(self, data):
+def create_new_contract(data):
         try:
             if data:
                 new_contract = Contract.create_new_contract(data)
