@@ -80,7 +80,7 @@ def get_product_by_id(id):
     product = get_by_id(id)
     if product:
         return jsonify({
-            
+            "message": "Producto encontrado",  
             "data": product.to_dict()
         }), 200
     else:    
@@ -160,7 +160,6 @@ def  get_by_id(id):
         except SQLAlchemyError as e:
             logger.error(f"Error al obtener producto por ID: {str(e)}")
             return None 
-
 def create_new_product(data):
         try:
             if data:
