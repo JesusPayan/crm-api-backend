@@ -1,12 +1,11 @@
 from flask import Blueprint, jsonify, request
 from app.logger import logger
-from app.models import Contract
+from app.models import Contract,Product
 from sqlalchemy.exc import SQLAlchemyError
 from app import db
+
 contracts_api = Blueprint('contractsApi', __name__)
 
-
-print("✅ contractsApi cargado correctamente")
 
 @contracts_api.route('/add_contract', methods=['POST'])
 def add_contract():
@@ -78,9 +77,20 @@ def get_contract_by_id(self, id):
         return None
 
 def create_new_contract(data):
+        client_id = None
+        product_name = None
+        contract_type = None
+        created_by = None
+
         try:
             if data:
-                new_contract = Contract.create_new_contract(data)
+                logger.info(f"Creating new contract: {data}")
+                if data['client_id'] is not None: client_id = data['client_id']
+                if data['contract_type'] is not None: contract_type = data['contract_type']   
+                if data['product_name'] is not None: product_name = data['product_name']
+                if data['created_by'] is not None: created_by = data['created_by']
+                    
+                new_contract = Contract.create_contract(client_id,product_name, contract_type, created_by)
                 return new_contract
             return None
         except SQLAlchemyError as e:

@@ -104,8 +104,7 @@ def add_product():
             return jsonify({"message": "Error al agregar el producto"}), 400
     else:
         return jsonify({"message": "No se recibió información válida"}), 400
-    
-    
+   
 def delete_product_by_id(id):
         try:
             product = Product.query.filter_by(id=id).first()
@@ -213,3 +212,4 @@ def update_product_by_id(id, data):
     except SQLAlchemyError as e:
             logger.error(f"Error al actualizar producto: {str(e)}")
             return None 
+
