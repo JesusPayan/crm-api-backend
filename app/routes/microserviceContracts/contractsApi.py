@@ -14,7 +14,7 @@ def add_contract():
     if data:
         print(f"POST /contract-add endpoint reached {data}")
         logger.info(f"Contrato recibido: {data}")
-        contract_saved = create_new_contract(data)
+        contract_saved,message = create_new_contract(data)
         logger.info(f"Contrato guardado: {contract_saved}")
         if contract_saved:
             return jsonify({
@@ -22,7 +22,7 @@ def add_contract():
                 "data": contract_saved.to_dict()
             }), 201
         else:
-            return jsonify({"message": "Error al agregar el contrato"}), 400
+            return jsonify({"message": f"Error al agregar el contrato, {message}"}), 400
     else:
         return jsonify({"message": "No se recibió información válida"}), 400
 @contracts_api.route('v1/contracts/<int:id>', methods=['PUT'])
@@ -90,8 +90,8 @@ def create_new_contract(data):
                 if data['product_name'] is not None: product_name = data['product_name']
                 if data['created_by'] is not None: created_by = data['created_by']
                     
-                new_contract = Contract.create_contract(client_id,product_name, contract_type, created_by)
-                return new_contract
+                new_contract,message = Contract.create_contract(client_id,product_name, contract_type, created_by)
+                return new_contract,message 
             return None
         except SQLAlchemyError as e:
             logger.error(f"Error al crear contrato: {str(e)}")

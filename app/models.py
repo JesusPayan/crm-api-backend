@@ -372,14 +372,24 @@ class Contract(db.Model):
                                             .filter(Product.status == 1)\
                                             .filter(Product.available_profiles > 0)\
                                             .first()
-            current_price = product.client_profile_price   
+            
+            #si no hay perfiles disponibles se debe regresar el mensaje sin perfiles disponibles
+            if not product:
+                return False,"Sin perfiles disponibles para el producto seleccionado"
+            else:
+                current_price = product.client_profile_price
+                logger.info(f"Product with description:{product.description} perfiles disponibles = {product.available_profiles}")  
         if contract_type == 2:
             #validamos que haya disponibilidad de cuentas completas
             product = product = db.session.query(Product).filter(Product.description == product_name)\
                                             .filter(Product.status == 1)\
                                             .filter(Product.available_profiles >= Product.total_profiles).first()
-                            
-            current_price = product.client_complete_price                                
+            if not product:
+                return False,"No hay cuentas disponibles para el producto seleccionado"
+            else:
+                current_price = product.client_complete_price
+                logger.info(f"Product with description:{product.description} perfiles disponibles = {product.available_profiles}")
+                                                     
         if product:
             logger.info(f"Product with description:{product.description} perfiles disponibles = {product.available_profiles}")
             contract = Contract(
@@ -409,7 +419,7 @@ class Contract(db.Model):
             db.session.commit()
             
             if contract:
-                return contract
+                return contract,"Contrato creado exitosamente"
             else:
                 return None
 
