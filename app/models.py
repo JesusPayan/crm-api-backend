@@ -280,12 +280,17 @@ class Transaction(db.Model):
     id = Column(Integer, primary_key=True, autoincrement=True)
     Transaction_type_id = Column(String(50))
     Transaction_type_desc = Column(String(100))
+    client_id = Column(Integer, ForeignKey('client.id'), nullable=False)
+    contract_id = Column(Integer, ForeignKey('contracts.id'), nullable=False)
     Transaction_date = Column(Date)
     Transaction_amount = Column(DECIMAL(10, 2))
     Transaction_description = Column(String(100))
     Transaction_reference = Column(String(100))
     Transaction_status = Column(Integer)
     Transaction_status_desc = Column(String(100))
+    
+    contract = relationship('Contract', backref='accounting', lazy=True)
+    client = relationship('Client', backref='accounting', lazy=True)
     @staticmethod
     def get_all_transactions():
         transactions = db.session.query(Transaction).all()
@@ -317,11 +322,34 @@ class Transaction(db.Model):
         transaction = db.session.query(Transaction).filter_by(id=id).delete()
         db.session.commit()
         return transaction
-    def create_new_transaction(self, data):
-        new_transaction = Transaction(data)
+    def add_transaction(type, amount, client_id, contract_id):
+        logger.info(f"Adding transaction with type: {type}, amount: {amount}, client_id: {client_id}, contract_id: {contract_id}")
+        if type == 1:
+            type_desc = "Venta"
+        elif type == 2:
+            type_desc = "Compra"
+        if amount:
+            amount = float(amount)
+        if client_id:
+            client_id = int(client_id)
+        if contract_id:
+            contract_id = int(contract_id)
+        
+        new_transaction = Transaction(
+            Transaction_type_id=type,
+            Transaction_type_desc=type_desc,
+            contract_id=contract_id,  # ← CORRECTO
+            client_id=client_id,
+            Transaction_date=datetime.now().date(),
+            Transaction_amount=amount,
+            Transaction_description="Complete"
+        )
         db.session.add(new_transaction)
         db.session.commit()
-        return new_transaction
+        if not new_transaction:
+            return None, "Error al crear la transacción"
+        else:
+            return new_transaction, "Transacción creada con exito"
     
     
 # Tabla: contracts

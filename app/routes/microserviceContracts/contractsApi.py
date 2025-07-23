@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 from app.logger import logger
-from app.models import Contract,Product
+from app.models import Contract,Product,Transaction
 from sqlalchemy.exc import SQLAlchemyError
 from app import db
 
@@ -91,6 +91,10 @@ def create_new_contract(data):
                 if data['created_by'] is not None: created_by = data['created_by']
                     
                 new_contract,message = Contract.create_contract(client_id,product_name, contract_type, created_by)
+                #se agrega la logica para llevar el control de las transacciones $$
+                if new_contract:
+                    Transaction.add_transaction(new_contract.contract_type, new_contract.total_price, new_contract.client_id, new_contract.id)
+
                 return new_contract,message 
             return None
         except SQLAlchemyError as e:
