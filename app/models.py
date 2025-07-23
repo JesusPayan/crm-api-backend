@@ -3,9 +3,10 @@ from app import db
 from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, Date, TIMESTAMP, DECIMAL
 from sqlalchemy.orm import relationship
 from app.logger import logger
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import jsonify
 import numbers
+
 
 
 # Tabla: client
@@ -263,8 +264,94 @@ class Product(db.Model):
         product = db.session.query(Product).filter_by(id=id).delete()
         db.session.commit()
         return product
-    
+    @staticmethod
+    def validate_profile_avalailability(product_description):
+        # 
+        # product = db.session.query(Product).filter_by(description=product_description)..filter_by(status=1).filter_by(Product.available_profiles>0).first()
+        product = db.session.execute("SELECT * FROM product WHERE description = :product_description AND status = 1 AND available_profiles > 0", {'product_description': product_description})
+        if not product:
+            return False
+        else:
+            print("producto encontrados",product)
+            return product
+class Transaction(db.Model):
+    __tablename__ = 'accounting'
 
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    Transaction_type_id = Column(String(50))
+    Transaction_type_desc = Column(String(100))
+    client_id = Column(Integer, ForeignKey('client.id'), nullable=False)
+    contract_id = Column(Integer, ForeignKey('contracts.id'), nullable=False)
+    Transaction_date = Column(Date)
+    Transaction_amount = Column(DECIMAL(10, 2))
+    Transaction_description = Column(String(100))
+    Transaction_reference = Column(String(100))
+    Transaction_status = Column(Integer)
+    Transaction_status_desc = Column(String(100))
+    
+    contract = relationship('Contract', backref='accounting', lazy=True)
+    client = relationship('Client', backref='accounting', lazy=True)
+    @staticmethod
+    def get_all_transactions():
+        transactions = db.session.query(Transaction).all()
+        return transactions
+    def to_dict(self):
+        return {
+                "id":self.id,
+                "Transaction_type_id":self.Transaction_type_id,
+                "Transaction_type_desc":self.Transaction_type_desc,
+                "Transaction_date":self.Transaction_date,
+                "Transaction_amount":self.Transaction_amount,
+                "Transaction_description":self.Transaction_description,
+                "Transaction_reference":self.Transaction_reference,
+                "Transaction_status":self.Transaction_status,
+                "Transaction_status_desc":self.Transaction_status_desc
+        }
+    @staticmethod
+    def get_by_id(id):
+        transaction = db.session.query(Transaction).filter_by(id=id).first()
+        return transaction
+    def update_transaction(self, id, data):
+        transaction = db.session.query(Transaction).filter_by(id=id).update(data)
+        if not transaction:
+            return None
+        else:
+            db.session.commit()
+            return transaction
+    def delete_transaction(self, id):
+        transaction = db.session.query(Transaction).filter_by(id=id).delete()
+        db.session.commit()
+        return transaction
+    def add_transaction(type, amount, client_id, contract_id):
+        logger.info(f"Adding transaction with type: {type}, amount: {amount}, client_id: {client_id}, contract_id: {contract_id}")
+        if type == 1:
+            type_desc = "Venta"
+        elif type == 2:
+            type_desc = "Compra"
+        if amount:
+            amount = float(amount)
+        if client_id:
+            client_id = int(client_id)
+        if contract_id:
+            contract_id = int(contract_id)
+        
+        new_transaction = Transaction(
+            Transaction_type_id=type,
+            Transaction_type_desc=type_desc,
+            contract_id=contract_id,  # ← CORRECTO
+            client_id=client_id,
+            Transaction_date=datetime.now().date(),
+            Transaction_amount=amount,
+            Transaction_description="Complete"
+        )
+        db.session.add(new_transaction)
+        db.session.commit()
+        if not new_transaction:
+            return None, "Error al crear la transacción"
+        else:
+            return new_transaction, "Transacción creada con exito"
+    
+    
 # Tabla: contracts
 class Contract(db.Model):
     __tablename__ = 'contracts'
@@ -272,6 +359,8 @@ class Contract(db.Model):
     id = Column(Integer, primary_key=True, autoincrement=True)
     client_id = Column(Integer, ForeignKey('client.id'), nullable=False)
     product_id = Column(Integer, ForeignKey('product.id'), nullable=False)
+    contract_type = Column(Integer)
+    contract_type_desc = Column(String(100))
     start_date = Column(Date)
     end_date = Column(Date)
     days_left = Column(Integer)
@@ -301,41 +390,67 @@ class Contract(db.Model):
         db.session.commit()
         return contract
     @staticmethod
-    def create_new_contract(data):
-        if data:
-                logger.info(f"Creating new contract: {data}")
-                if data['client_id'] is not None:
-                    client_id = data['client_id']
-                if data['product_id'] is not None:
-                    product_id = data['product_id']
-                if data['start_date'] is not None:
-                    start_date = data['start_date']
-                if data['end_date'] is not None:
-                    end_date = data['end_date']
-                if data['status'] is not None:
-                    status = data['status']
-                if data['status_desc'] is not None:
-                    status_desc = data['status_desc']
-                if data['created_by'] is not None:
-                    created_by = data['created_by']
-    
-                contract = Contract(
-                    client_id=client_id,
-                    product_id=product_id,
-                    start_date=start_date,
-                    end_date=end_date,
-                    created_at=datetime.now(),
-                    status=status,
-                    status_desc=status_desc,
-                    created_by=created_by
-                )
-                db.session.add(contract)
-                db.session.flush()
-                db.session.commit()
-                return contract
+    def create_contract(client_id,product_name, contract_type, created_by):
+        print("contract_type",contract_type)
+        #Tipos de contratos 1: Completa, 2: Perfil, 3 renovacion perfil
+        #Si el tipo de contrato es 1 significa que el cliente va a adquirir un perfil
+        if contract_type == 1:
+        #validamos que haya disponibilidad de perfiles, para el producto seleccionado
+            product = product = db.session.query(Product).filter(Product.description == product_name)\
+                                            .filter(Product.status == 1)\
+                                            .filter(Product.available_profiles > 0)\
+                                            .first()
+            
+            #si no hay perfiles disponibles se debe regresar el mensaje sin perfiles disponibles
+            if not product:
+                return False,"Sin perfiles disponibles para el producto seleccionado"
+            else:
+                current_price = product.client_profile_price
+                logger.info(f"Product with description:{product.description} perfiles disponibles = {product.available_profiles}")  
+        if contract_type == 2:
+            #validamos que haya disponibilidad de cuentas completas
+            product = product = db.session.query(Product).filter(Product.description == product_name)\
+                                            .filter(Product.status == 1)\
+                                            .filter(Product.available_profiles >= Product.total_profiles).first()
+            if not product:
+                return False,"No hay cuentas disponibles para el producto seleccionado"
+            else:
+                current_price = product.client_complete_price
+                logger.info(f"Product with description:{product.description} perfiles disponibles = {product.available_profiles}")
+                                                     
+        if product:
+            logger.info(f"Product with description:{product.description} perfiles disponibles = {product.available_profiles}")
+            contract = Contract(
+                client_id=client_id,
+                product_id=product.id,
+                start_date=datetime.now(),
+                contract_type=contract_type,
+                #Se asumira que la contratacion es de 30 dias
+                end_date=datetime.now() + timedelta(days=30),
+                days_left=product.expiration_date,
+                status=1,
+                status_desc="Activo",
+                created_at=datetime.now(),
+                created_by=created_by,
+                updated_at=datetime.now(),
+                updated_by=created_by,
+                total_price=current_price
+            )
+            db.session.add(contract)
+            db.session.flush()
+            db.session.commit()
+            #actualizamos el total de perfiles disponibles
+            if contract_type == 1:
+                product.available_profiles -= 1
+            if contract_type == 2:    
+                product.available_profiles -= product.total_profiles
+            db.session.commit()
+            
+            if contract:
+                return contract,"Contrato creado exitosamente"
+            else:
+                return None
 
-        else:
-            return None
     def to_dict(self):
         return {
             "id": self.id,

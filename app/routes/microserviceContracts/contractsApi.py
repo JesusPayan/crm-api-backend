@@ -1,12 +1,11 @@
 from flask import Blueprint, jsonify, request
 from app.logger import logger
-from app.models import Contract
+from app.models import Contract,Product,Transaction
 from sqlalchemy.exc import SQLAlchemyError
 from app import db
+
 contracts_api = Blueprint('contractsApi', __name__)
 
-
-print("✅ contractsApi cargado correctamente")
 
 @contracts_api.route('/add_contract', methods=['POST'])
 def add_contract():
@@ -15,7 +14,7 @@ def add_contract():
     if data:
         print(f"POST /contract-add endpoint reached {data}")
         logger.info(f"Contrato recibido: {data}")
-        contract_saved = create_new_contract(data)
+        contract_saved,message = create_new_contract(data)
         logger.info(f"Contrato guardado: {contract_saved}")
         if contract_saved:
             return jsonify({
@@ -23,7 +22,7 @@ def add_contract():
                 "data": contract_saved.to_dict()
             }), 201
         else:
-            return jsonify({"message": "Error al agregar el contrato"}), 400
+            return jsonify({"message": f"Error al agregar el contrato, {message}"}), 400
     else:
         return jsonify({"message": "No se recibió información válida"}), 400
 @contracts_api.route('v1/contracts/<int:id>', methods=['PUT'])
@@ -78,10 +77,25 @@ def get_contract_by_id(self, id):
         return None
 
 def create_new_contract(data):
+        client_id = None
+        product_name = None
+        contract_type = None
+        created_by = None
+
         try:
             if data:
-                new_contract = Contract.create_new_contract(data)
-                return new_contract
+                logger.info(f"Creating new contract: {data}")
+                if data['client_id'] is not None: client_id = data['client_id']
+                if data['contract_type'] is not None: contract_type = data['contract_type']   
+                if data['product_name'] is not None: product_name = data['product_name']
+                if data['created_by'] is not None: created_by = data['created_by']
+                    
+                new_contract,message = Contract.create_contract(client_id,product_name, contract_type, created_by)
+                #se agrega la logica para llevar el control de las transacciones $$
+                if new_contract:
+                    Transaction.add_transaction(new_contract.contract_type, new_contract.total_price, new_contract.client_id, new_contract.id)
+
+                return new_contract,message 
             return None
         except SQLAlchemyError as e:
             logger.error(f"Error al crear contrato: {str(e)}")
