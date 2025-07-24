@@ -396,7 +396,7 @@ class Contract(db.Model):
         #Si el tipo de contrato es 1 significa que el cliente va a adquirir un perfil
         if contract_type == 1:
         #validamos que haya disponibilidad de perfiles, para el producto seleccionado
-            product = product = db.session.query(Product).filter(Product.description == product_name)\
+            product = db.session.query(Product).filter(Product.description == product_name)\
                                             .filter(Product.status == 1)\
                                             .filter(Product.available_profiles > 0)\
                                             .first()

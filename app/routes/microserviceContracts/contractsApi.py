@@ -3,10 +3,15 @@ from app.logger import logger
 from app.models import Contract,Product,Transaction
 from sqlalchemy.exc import SQLAlchemyError
 from app import db
+from datetime import datetime, timedelta
 
 contracts_api = Blueprint('contractsApi', __name__)
-
-
+print("contracts_api")
+@contracts_api.route('/update_day_left', methods=['PUT'])
+def update_day_left():
+    print("PUT /contract endpoint reached")
+    update_contracts_day_left()
+    return jsonify({'message': 'Day left updated successfully'}), 200
 @contracts_api.route('/add_contract', methods=['POST'])
 def add_contract():
     print("POST /contract-add endpoint reached")
@@ -25,11 +30,12 @@ def add_contract():
             return jsonify({"message": f"Error al agregar el contrato, {message}"}), 400
     else:
         return jsonify({"message": "No se recibió información válida"}), 400
-@contracts_api.route('v1/contracts/<int:id>', methods=['PUT'])
-def update_contract(contract_id):
-        print("PUT /contract endpoint reached", contract_id)
+@contracts_api.route('/renovate_contract/<int:id>', methods=['PUT'])
+def renovate_contract(id):
+        print("PUT /contract endpoint reached", id)
         data = request.get_json()
-        contract_updated = update_contract_by_id(contract_id, data)
+        print("PUT /contract endpoint reached", data)
+        contract_updated = renovate_contract_by_id(id, data)
         if contract_updated:
             return jsonify({'message': 'Contract updated successfully'}), 200
         else:
@@ -69,7 +75,7 @@ def get_all_contracts(self):
             logger.error(f"Error al obtener contratos: {str(e)}")
             return None
 
-def get_contract_by_id(self, id):
+def get_contract_by_id( id):
     try:
         return Contract.query.filter_by(id=id).first()
     except SQLAlchemyError as e:
@@ -93,7 +99,7 @@ def create_new_contract(data):
                 new_contract,message = Contract.create_contract(client_id,product_name, contract_type, created_by)
                 #se agrega la logica para llevar el control de las transacciones $$
                 if new_contract:
-                    Transaction.add_transaction(new_contract.contract_type, new_contract.total_price, new_contract.client_id, new_contract.id)
+                    Transaction.add_transaction(1, new_contract.total_price, new_contract.client_id, new_contract.id)
 
                 return new_contract,message 
             return None
@@ -123,4 +129,33 @@ def delete_contract_by_id(self, id):
         return True
     else:
         return False
+def renovate_contract_by_id(id, data):
+    logger.info(f"Updating contract with id: {id} and data: {data}")
+    try:
+        contract = Contract.query.filter_by(id=id).first()
+        if not contract:
+            return None
+        else:
+            contract.start_date = datetime.now()
+            contract.end_date = datetime.now() + timedelta(days=30)
+            contract.days_left = 30
+            contract.updated_at = datetime.now()
+            contract.updated_by = data['renovate_by']
+            contract.status = 1
+            contract.status_desc = "Activo"
+            db.session.commit()
+            return contract, "Contrato renovado correctamente"
+    except SQLAlchemyError as e:
+        logger.error(f"Error al actualizar contrato: {str(e)}")
+        return None
+def update_contracts_day_left():
     
+        contracts = Contract.query.filter(Contract.days_left>0).all()
+            
+        for contract in contracts:
+            print((contract.end_date - datetime.now().date()).days)
+            contract.days_left = (contract.end_date - datetime.now().date()).days
+            if contract.days_left <= 0:
+                contract.status = 2
+                contract.status_desc = "Vencido"
+            db.session.commit()
