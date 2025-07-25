@@ -95,8 +95,10 @@ def create_new_contract(data):
                 if data['contract_type'] is not None: contract_type = data['contract_type']   
                 if data['product_name'] is not None: product_name = data['product_name']
                 if data['created_by'] is not None: created_by = data['created_by']
+                if data['duration'] is not None: duration = data['duration']
+                duration = calculate_duration(duration)
                     
-                new_contract,message = Contract.create_contract(client_id,product_name, contract_type, created_by)
+                new_contract,message = Contract.create_contract(client_id,product_name, contract_type, created_by,duration)
                 #se agrega la logica para llevar el control de las transacciones $$
                 if new_contract:
                     Transaction.add_transaction(1, new_contract.total_price, new_contract.client_id, new_contract.id)
@@ -153,9 +155,22 @@ def update_contracts_day_left():
         contracts = Contract.query.filter(Contract.days_left>0).all()
             
         for contract in contracts:
-            print((contract.end_date - datetime.now().date()).days)
+            # print((contract.end_date - datetime.now().date()).days)
             contract.days_left = (contract.end_date - datetime.now().date()).days
             if contract.days_left <= 0:
                 contract.status = 2
                 contract.status_desc = "Vencido"
             db.session.commit()
+            
+            
+def calculate_duration(duration):
+    if duration.lower() == "semestral":
+        return 180
+    if duration.lower() == "semanal":
+        return 7
+    if duration.lower() == "trimestral":
+        return 90
+    if duration.lower() == "mensual":
+        return 30
+    elif duration.lower() == "anual":
+        return 365
