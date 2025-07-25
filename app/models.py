@@ -390,13 +390,14 @@ class Contract(db.Model):
         db.session.commit()
         return contract
     @staticmethod
-    def create_contract(client_id,product_name, contract_type, created_by):
+    def create_contract(client_id,product_name, contract_type, created_by,duration):
         print("contract_type",contract_type)
+        logger.info(f"Models: Creating contract with client_id: {client_id}, product_name: {product_name}, contract_type: {contract_type}, created_by: {created_by}")   
         #Tipos de contratos 1: Completa, 2: Perfil, 3 renovacion perfil
         #Si el tipo de contrato es 1 significa que el cliente va a adquirir un perfil
         if contract_type == 1:
         #validamos que haya disponibilidad de perfiles, para el producto seleccionado
-            product = product = db.session.query(Product).filter(Product.description == product_name)\
+            product = db.session.query(Product).filter(Product.description == product_name)\
                                             .filter(Product.status == 1)\
                                             .filter(Product.available_profiles > 0)\
                                             .first()
@@ -426,19 +427,24 @@ class Contract(db.Model):
                 start_date=datetime.now(),
                 contract_type=contract_type,
                 #Se asumira que la contratacion es de 30 dias
-                end_date=datetime.now() + timedelta(days=30),
-                days_left=product.expiration_date,
+                end_date=datetime.now() + timedelta(days=duration),
+                days_left=duration,
                 status=1,
                 status_desc="Activo",
                 created_at=datetime.now(),
                 created_by=created_by,
                 updated_at=datetime.now(),
                 updated_by=created_by,
-                total_price=current_price
+                total_price=current_price,
+                contract_type_desc= "Perfil" if contract_type == 1 else "Completa"
             )
-            db.session.add(contract)
-            db.session.flush()
-            db.session.commit()
+            try:
+                db.session.add(contract)
+                db.session.flush()
+                db.session.commit()
+            except Exception as e:
+                logger.error(f"Error creating new contract: {str(e.with_traceback())}")
+                return None
             #actualizamos el total de perfiles disponibles
             if contract_type == 1:
                 product.available_profiles -= 1
