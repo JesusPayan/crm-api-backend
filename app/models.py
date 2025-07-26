@@ -124,6 +124,30 @@ class Product(db.Model):
     expiration_date = Column(TIMESTAMP)
     
     contracts = relationship("Contract", back_populates="product", lazy=True)
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "cve_internal": self.cve_internal,
+            "description": self.description,
+            "investment": self.investment,
+            "client_profile_price": self.client_profile_price,
+            "client_complete_price": self.client_complete_price,
+            "product_profit_profile": self.product_profit_profile,
+            "product_profit_per_complete": self.product_profit_per_complete,
+            "image": self.image,
+            "total_profiles": self.total_profiles,
+            "active_profiles": self.active_profiles,
+            "available_profiles": self.available_profiles,
+            "status": self.status,
+            "status_desc": self.status_desc,
+            "created_at": self.created_at,
+            "created_by": self.created_by,
+            "updated_at": self.updated_at,
+            "updated_by": self.updated_by,
+            "access_identifier": self.access_identifier,
+            "access_password": self.access_password,
+            "expiration_date": self.expiration_date
+        }
     @staticmethod
     def create_new_product(data):
         if data.get('cve_internal') is None:
@@ -186,7 +210,7 @@ class Product(db.Model):
             db.session.add(new_product)
             db.session.flush()
             db.session.commit()
-            return new_product
+            return new_product, "Product created successfully"
         except Exception as e:
             logger.error(f"Error creating new product: {str(e)}")
             return None
@@ -194,7 +218,7 @@ class Product(db.Model):
     def calculate_products_by_description(description):
         products = Product.query.filter(Product.description.like(f"%{description}%")).all()
         return len(products)
-    def to_dict(self):
+    def to_dict():
         logger.info(f"models.py: Getting product by id: {self.id}")
         return {
                 "id":self.id,
@@ -280,8 +304,10 @@ class Transaction(db.Model):
     id = Column(Integer, primary_key=True, autoincrement=True)
     Transaction_type_id = Column(String(50))
     Transaction_type_desc = Column(String(100))
-    client_id = Column(Integer, ForeignKey('client.id'), nullable=False)
-    contract_id = Column(Integer, ForeignKey('contracts.id'), nullable=False)
+    # client_id = Column(Integer, ForeignKey('client.id'), nullable=False)
+    # contract_id = Column(Integer, ForeignKey('contracts.id'), nullable=False)
+    client_id = Column(Integer, ForeignKey('client.id'), nullable=True)
+    contract_id = Column(Integer, ForeignKey('contracts.id'), nullable=True)
     Transaction_date = Column(Date)
     Transaction_amount = Column(DECIMAL(10, 2))
     Transaction_description = Column(String(100))
@@ -324,32 +350,44 @@ class Transaction(db.Model):
         return transaction
     def add_transaction(type, amount, client_id, contract_id):
         logger.info(f"Adding transaction with type: {type}, amount: {amount}, client_id: {client_id}, contract_id: {contract_id}")
-        if type == 1:
-            type_desc = "Venta"
-        elif type == 2:
-            type_desc = "Compra"
+        
         if amount:
             amount = float(amount)
         if client_id:
             client_id = int(client_id)
         if contract_id:
             contract_id = int(contract_id)
-        
-        new_transaction = Transaction(
+        if type == 1:
+            type_desc = "Venta"
+            new_transaction = Transaction(
+                Transaction_type_id=type,
+                Transaction_type_desc=type_desc,
+                contract_id=contract_id,  # ← CORRECTO
+                client_id=client_id,
+                Transaction_date=datetime.now().date(),
+                Transaction_amount=amount,
+                Transaction_description="Complete"
+            )
+        elif type == 2:
+            type_desc = "Compra"
+            new_transaction = Transaction(
             Transaction_type_id=type,
             Transaction_type_desc=type_desc,
-            contract_id=contract_id,  # ← CORRECTO
-            client_id=client_id,
             Transaction_date=datetime.now().date(),
             Transaction_amount=amount,
             Transaction_description="Complete"
         )
-        db.session.add(new_transaction)
-        db.session.commit()
-        if not new_transaction:
-            return None, "Error al crear la transacción"
-        else:
+        
+        try:
+            db.session.add(new_transaction)
+            db.session.flush()
+            db.session.commit()
             return new_transaction, "Transacción creada con exito"
+        except Exception as e:
+            logger.error(f"Error al crear la transacción: {str(e.with_traceback())}")
+            return None, "Error al crear la transacción"
+        finally:
+            db.session.close()
     
     
 # Tabla: contracts

@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 from app.logger import logger
-from app.models import Product
+from app.models import Product, Transaction
 from sqlalchemy.exc import SQLAlchemyError
 from app import db
 
@@ -162,8 +162,11 @@ def  get_by_id(id):
 def create_new_product(data):
         try:
             if data:
-                new_product = Product.create_new_product(data)
-                return new_product
+                new_product,message = Product.create_new_product(data)
+                if new_product:
+                    Transaction.add_transaction(2, new_product.investment, 0,0)
+                    
+                return new_product,message
             return None
         except SQLAlchemyError as e:
             logger.error(f"Error al crear producto: {str(e)}")
