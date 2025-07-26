@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request
 from app.logger import logger
-from app.models import Product, Transaction
+from app.models.product import Product
+from app.models.transaction import Transaction
 from sqlalchemy.exc import SQLAlchemyError
 from app import db
 
@@ -26,7 +27,7 @@ def delete_all_products():
 @products_api.route('/delete_product_by_id/<int:id>', methods=['DELETE'])
 def delete_product(id):
     print("DELETE /product endpoint reached", id)
-    product_deleted = delete_product_by_id(id)
+    product_deleted = delete_product_by_identifier(id)
     if product_deleted:
         return jsonify({'message': 'Product deleted successfully'}), 200
     else:
@@ -42,7 +43,7 @@ def delete_product_by_description(name):
 @products_api.route('/get_product_by_status/<string:status>', methods=['GET'])
 def get_product_by_status(status):
     print("GET /product_by_status endpoint reached for status:", status) 
-    products_list = get_product_by_status(status)
+    products_list = find_product_by_status(status)
     if products_list:
         # Asume que cada producto tiene un método to_dict()
         return jsonify({
@@ -93,19 +94,18 @@ def add_product():
     if data:
         print(f"POST /product-add endpoint reached {data}")
         logger.info(f"POST /product-add endpoint reached input:{data}")
-        product_saved = create_new_product(data)
+        message,product_saved = create_new_product(data)
         logger.info(f"Producto guardado: {product_saved}")
         if product_saved:
             return jsonify({
-                "message": "Producto agregado correctamente",
+                "message": message,
                 "data": product_saved.to_dict()
             }), 201
         else:
             return jsonify({"message": "Error al agregar el producto"}), 400
     else:
         return jsonify({"message": "No se recibió información válida"}), 400
-   
-def delete_product_by_id(id):
+def delete_product_by_identifier(id):
         try:
             product = Product.query.filter_by(id=id).first()
             if product:
@@ -165,8 +165,7 @@ def create_new_product(data):
                 new_product,message = Product.create_new_product(data)
                 if new_product:
                     Transaction.add_transaction(2, new_product.investment, 0,0)
-                    
-                return new_product,message
+                return message,new_product
             return None
         except SQLAlchemyError as e:
             logger.error(f"Error al crear producto: {str(e)}")
@@ -184,7 +183,7 @@ def update_product(id, data):
         except SQLAlchemyError as e:
             logger.error(f"Error al actualizar producto: {str(e)}")
             return None
-def delete_product(id):
+def delete_product_by_id(id):
         try:
             product = Product.query.filter_by(id=id).first()
             if product:
@@ -198,7 +197,7 @@ def delete_product(id):
 
     # Otros filtros según atributos específicos:
 
-def get_product_by_status(status):
+def find_product_by_status(status):
         return Product.query.filter_by(status_desc=status).all()
     
 def update_product_by_id(id, data):

@@ -1,5 +1,10 @@
 from flask import Blueprint, jsonify
-from app.models import Client, Product, Contract, Catalog, CatalogValue
+from app.models.catalog_values import CatalogValue
+from app.models.catalog import Catalog
+from app.models.contract import Contract
+from app.models.product import Product
+from app.models.client import Client
+from app.logger import logger
 
 test_bp = Blueprint("test", __name__)
 
