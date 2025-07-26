@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request
 from app.logger import logger
-from app.models import Catalog, CatalogValue
+from app.models.catalog import Catalog
+from app.models.catalog_values import CatalogValue
 from sqlalchemy.exc import SQLAlchemyError
 from app import db
 

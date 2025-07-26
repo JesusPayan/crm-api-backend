@@ -1,6 +1,8 @@
 from flask import Blueprint, jsonify, request
 from app.logger import logger
-from app.models import Contract,Product,Transaction
+from app.models.contract import Contract
+from app.models.product import Product
+from app.models.transaction import Transaction
 from sqlalchemy.exc import SQLAlchemyError
 from app import db
 from datetime import datetime, timedelta
@@ -62,7 +64,7 @@ def get_contracts():
 @contracts_api.route('v1/contracts/<int:id>', methods=['GET'])
 def get_contract_by_id(contract_id):
         print("GET /contract endpoint reached", contract_id)
-        contract = get_contract_by_id(contract_id)
+        contract = get_contract_by_identifier(contract_id)
         if contract:
             return jsonify({'contract': contract.to_dict()}), 200
         else:
@@ -75,7 +77,7 @@ def get_all_contracts(self):
             logger.error(f"Error al obtener contratos: {str(e)}")
             return None
 
-def get_contract_by_id( id):
+def get_contract_by_identifier(id):
     try:
         return Contract.query.filter_by(id=id).first()
     except SQLAlchemyError as e:

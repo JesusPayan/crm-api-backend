@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 from app.logger import logger
-from app.models import Client
+from app.models.client import Client
 import json
 
 clients_api = Blueprint('clientsApi', __name__)
