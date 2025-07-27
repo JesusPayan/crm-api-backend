@@ -5,6 +5,7 @@ from sqlalchemy.orm import relationship
 from app.logger import logger
 from datetime import datetime, timedelta
 from flask import jsonify
+from app.models.product import Product
 import numbers
 
 
