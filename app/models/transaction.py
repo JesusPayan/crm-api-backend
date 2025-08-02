@@ -80,14 +80,16 @@ class Transaction(db.Model):
                 Transaction_description="Complete"
             )
         elif type == 2:
-            type_desc = "Compra"
-            new_transaction = Transaction(
-            Transaction_type_id=type,
-            Transaction_type_desc=type_desc,
-            Transaction_date=datetime.now().date(),
-            Transaction_amount=amount,
-            Transaction_description="Complete"
-        )
+            #validamos que haya saldo en la cuenta para realizar la compra
+                
+                type_desc = "Compra"
+                new_transaction = Transaction(
+                Transaction_type_id=type,
+                Transaction_type_desc=type_desc,
+                Transaction_date=datetime.now().date(),
+                Transaction_amount=amount,
+                Transaction_description="Complete"
+            )
         
         try:
             db.session.add(new_transaction)
@@ -99,4 +101,20 @@ class Transaction(db.Model):
             return None, "Error al crear la transacción"
         
     
-    
+    @staticmethod
+    def get_current_balance():
+        # Obtenemos el balance actual de la cuenta
+
+        try:
+            # obtenemos los egresos e ingresos
+            invents = db.session.query(db.func.sum(Transaction.Transaction_amount)).filter(Transaction.Transaction_type_id == 2)
+            income = db.session.query(db.func.sum(Transaction.Transaction_amount)).filter(Transaction.Transaction_type_id == 1)
+            balance = income.scalar() - invents.scalar()
+            logger.info(f"Ingresos {income.scalar()} - Egresos {invents.scalar()} = balance: {balance}")
+            if balance < 0:
+                return 0,"No tienes saldo suficiente para realizar la compra"
+            else:
+                return balance,"Tienes saldo suficiente para realizar la compra"
+        except Exception as e:
+            logger.error(f"Error al obtener los egresos e ingresos: {str(e.with_traceback())}")
+            return None

@@ -4,7 +4,6 @@ from app.models.product import Product
 from app.models.transaction import Transaction
 from sqlalchemy.exc import SQLAlchemyError
 from app import db
-
 products_api = Blueprint('productsApi', __name__)
 
 @products_api.route('/update_product_by_id/<int:id>', methods=['PUT'])
@@ -92,7 +91,7 @@ def get_product_by_id(id):
 def add_product():
     data = request.get_json()
     if data:
-        print(f"POST /product-add endpoint reached {data}")
+        # print(f"POST /product-add endpoint reached {data}")
         logger.info(f"POST /product-add endpoint reached input:{data}")
         message,product_saved = create_new_product(data)
         logger.info(f"Producto guardado: {product_saved}")
@@ -102,7 +101,7 @@ def add_product():
                 "data": product_saved.to_dict()
             }), 201
         else:
-            return jsonify({"message": "Error al agregar el producto"}), 400
+            return jsonify({"message": message}), 400
     else:
         return jsonify({"message": "No se recibió información válida"}), 400
 def delete_product_by_identifier(id):
@@ -162,10 +161,14 @@ def  get_by_id(id):
 def create_new_product(data):
         try:
             if data:
-                new_product,message = Product.create_new_product(data)
-                if new_product:
-                    Transaction.add_transaction(2, new_product.investment, 0,0)
-                return message,new_product
+                current_balance,message = Transaction.get_current_balance()     
+                if current_balance:   
+                    new_product,message = Product.create_new_product(data)
+                    if new_product:
+                        Transaction.add_transaction(2, new_product.investment, 0,0)
+                    return message,new_product
+                else:
+                    return message,None
             return None
         except SQLAlchemyError as e:
             logger.error(f"Error al crear producto: {str(e)}")
