@@ -2,6 +2,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from dotenv import load_dotenv
 from flask_migrate import Migrate
+from flask_cors import CORS
 # from app.routes.microserviceProducts.productsApi import products_api
 # from app.routes.microserviceContracts.contractsApi import contracts_api
 
@@ -14,7 +15,7 @@ def create_app():
 
     app = Flask(__name__)
     app.config.from_object('app.config.Config')
-
+    CORS(app)
     db.init_app(app)
     migrate.init_app(app, db)  # <-- Esta línea es nueva
     # Blueprints
