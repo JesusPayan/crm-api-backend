@@ -1,9 +1,11 @@
-from flask import Blueprint, jsonify, request
-from app.logger import logger
+from flask import Blueprint, jsonify, request, current_app
+# from app.logger import logger
 from app.models.product import Product
 from app.models.transaction import Transaction
 from sqlalchemy.exc import SQLAlchemyError
 from app import db
+import logging
+import os
 products_api = Blueprint('productsApi', __name__)
 
 @products_api.route('/update_product_by_id/<int:id>', methods=['PUT'])
@@ -89,12 +91,28 @@ def get_product_by_id(id):
             }), 404
 @products_api.route('/create_product', methods=['POST'])
 def add_product():
-    data = request.get_json()
+    if 'image' not in request.files:
+        return jsonify({"message": "No se ha seleccionado ninguna imagen"}), 400
+
+    image = request.files['image']
+    if image.filename == "":
+        return jsonify({"message": "Nombre de archivo vacío"}), 400
+
+    UPLOAD_FOLDER = os.path.join(os.getcwd(), 'uploads')
+    if not os.path.exists(UPLOAD_FOLDER):
+        os.makedirs(UPLOAD_FOLDER)
+
+    current_app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+    image_path = os.path.join(UPLOAD_FOLDER, image.filename)
+    image.save(image_path)
+
+    data = request.form
+    
     if data:
-        # print(f"POST /product-add endpoint reached {data}")
-        logger.info(f"POST /product-add endpoint reached input:{data}")
-        message,product_saved = create_new_product(data)
-        logger.info(f"Producto guardado: {product_saved}")
+        logging.info(f"POST /product-add endpoint reached input:{data}")
+        message, product_saved = create_new_product(data, image_path)
+        logging.info(f"Producto guardado: {product_saved}")
         if product_saved:
             return jsonify({
                 "message": message,
@@ -158,12 +176,12 @@ def  get_by_id(id):
         except SQLAlchemyError as e:
             logger.error(f"Error al obtener producto por ID: {str(e)}")
             return None 
-def create_new_product(data):
+def create_new_product(data,image_path):
         try:
             if data:
                 current_balance,message = Transaction.get_current_balance()     
                 if current_balance:   
-                    new_product,message = Product.create_new_product(data)
+                    new_product,message = Product.create_new_product(data,image_path)
                     if new_product:
                         Transaction.add_transaction(2, new_product.investment, 0,0)
                     return message,new_product
@@ -171,7 +189,7 @@ def create_new_product(data):
                     return message,None
             return None
         except SQLAlchemyError as e:
-            logger.error(f"Error al crear producto: {str(e)}")
+            logging.error(f"Error al crear producto: {str(e)}")
             return None
 def update_product(id, data):
         try:

@@ -17,10 +17,11 @@ def create_app():
     app.config.from_object('app.config.Config')
     CORS(app)
     db.init_app(app)
-    migrate.init_app(app, db)  # <-- Esta línea es nueva
-    # Blueprints
-    # # from app.routes.client_routes import client_bp
-    # app.register_blueprint(client_bp, url_prefix="/api/clients")
+    migrate.init_app(app, db)
+    UPLOAD_FOLDER = 'uploads'
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+    app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+    
     from app.routes.microserviceClients.clientsApi import clients_api
     from app.routes.microservicesProducts.productsApi import products_api
     from app.routes.microserviceContracts.contractsApi import contracts_api
