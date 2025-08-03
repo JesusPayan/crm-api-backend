@@ -6,6 +6,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from app import db
 import logging
 import os
+from sqlalchemy import text
 products_api = Blueprint('productsApi', __name__)
 
 @products_api.route('/update_product_by_id/<int:id>', methods=['PUT'])
@@ -97,8 +98,8 @@ def add_product():
     image = request.files['image']
     if image.filename == "":
         return jsonify({"message": "Nombre de archivo vacío"}), 400
-
-    UPLOAD_FOLDER = os.path.join(os.getcwd(), 'uploads')
+    image_path = r'C:\dev\Sistemas\CRM\crm-frontend-app\src\assets\images\products'
+    UPLOAD_FOLDER = os.path.join(os.getcwd(), image_path)
     if not os.path.exists(UPLOAD_FOLDER):
         os.makedirs(UPLOAD_FOLDER)
 
@@ -126,13 +127,13 @@ def delete_product_by_identifier(id):
         try:
             product = Product.query.filter_by(id=id).first()
             if product:
-                db.session.execute("DELETE FROM product WHERE id = :id", {"id": id})
+                db.session.execute(text('DELETE FROM product WHERE id =:id'), dict(id=f'{id}'))
                 db.session.commit()
                 return True
             else:
                 return False
         except SQLAlchemyError as e:
-            logger.error(f"Error al eliminar producto por ID: {str(e)}")
+            logging.error(f"Error al eliminar producto por ID: {e.with_traceback()}")
             return False
         
 def delete_product_by_name(name):
