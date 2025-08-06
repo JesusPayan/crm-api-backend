@@ -62,7 +62,7 @@ def update_client(id):
             else:
                 return jsonify({"message": "Client not found"}), 404
 
-@clients_api.route('/api/clients/<int:id>', methods=['DELETE'])
+@clients_api.route('/delete_client_by_id/<int:id>', methods=['DELETE'])
 def delete_client(id):
         logger.info("clientsApi.py: Deleting a client by id")
         delete_client_by_id(id)
