@@ -10,9 +10,12 @@ clients_api = Blueprint('clientsApi', __name__)
 @clients_api.route('/get_clients', methods=['GET'])
 def get_all_clients():
         logger.info("clientsApi.py: Getting all clients")
-        clients = get_all()
-        if clients:
-            return jsonify([client.to_dict() for client in clients])
+        clientsList = get_all()
+        if clientsList:
+            return jsonify({
+            "message": "Clientes encontrados",
+            "data": [client.to_dict() for client in clientsList]
+        }), 200
         else:
             return jsonify({"message": "No clients found"}), 404
         
@@ -20,12 +23,19 @@ def get_all_clients():
 @clients_api.route('/create_client', methods=['POST'])
 def create_client():
         logger.info("clientsApi.py: Creating a new client")
-        data = request.get_json()
-        client = create_new_client(data)
-        if client:
-            return jsonify(client.to_dict()), 201
+        data = request.form
+        if not data:
+            return jsonify({"message": "No data provided"}), 400
         else:
-            return jsonify({"message": "Client not created"}), 400
+
+            message,client = create_new_client(data)
+            if client:
+                return jsonify({
+                "message": message,
+                "data": client.to_dict()
+            }), 201
+            else:
+                return jsonify({"message": "Client not created"}), 400
         
 
 @clients_api.route('/api/clients/<int:id>', methods=['GET'])
