@@ -62,8 +62,8 @@ class Client(db.Model):
             name=data.get('name'),
             father_lastname=data.get('father_lastname'),
             mother_lastname=data.get('mother_lastname'),
-            status=data.get('status'),
-            status_desc=data.get('status_desc'),
+            status=1,
+            status_desc="Activo",
             telephone1=data.get('telephone1'),
             telephone2=data.get('telephone2') or data.get('telephone1'),
             email1=data.get('email1'),
@@ -75,7 +75,7 @@ class Client(db.Model):
             db.session.add(new_client)
             db.session.flush()
             db.session.commit()
-            return new_client
+            return new_client,"Cliente creado exitosamente"
         except Exception as e:
             logger.error(f"Error creating new client: {str(e)}")
 
