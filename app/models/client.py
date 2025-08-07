@@ -51,9 +51,14 @@ class Client(db.Model):
 
     @staticmethod
     def update_client(id, data):
+        
         client = db.session.query(Client).filter_by(id=id).update(data)
         db.session.commit()
-        return client
+        if client:
+            return client, "Cliente actualizado exitosamente"
+        else:
+            return None
+
 
     @staticmethod
     def create_new_client(data):
