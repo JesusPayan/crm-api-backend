@@ -28,7 +28,7 @@ def create_client():
             return jsonify({"message": "No data provided"}), 400
         else:
 
-            message,client = create_new_client(data)
+            client,message = create_new_client(data)
             if client:
                 return jsonify({
                 "message": message,
@@ -48,17 +48,19 @@ def get_client_by_id(id):
             return jsonify({"message": "Client not found"}), 404
         
 
-@clients_api.route('/api/clients/<int:id>', methods=['PUT'])
-def update_client(id):
-        logger.info("clientsApi.py: Updating a client by id")
-        data = request.get_json()
+# @clients_api.route('/api/clients/update_client_by_id/<int:id>', methods=['PUT'])
+@clients_api.route('/update_client', methods=['PUT'])
+def update_client():
+        data = request.form
+        logger.info("ClientsApi.py: Updating a client...")
         if not data:
             return jsonify({"message": "No data provided"}), 400
         else:
-            data = json.loads(data)
-            client = update_by_id(id, data)
+            # data = json.loads(data)
+            id = data.get('id')
+            client, message = update_by_id(id, data)
             if client:
-                return jsonify(client.to_dict())
+                return jsonify("message", message), 200
             else:
                 return jsonify({"message": "Client not found"}), 404
 
@@ -74,9 +76,9 @@ def create_new_client(data):
     logger.info(f"Creating new client: {data}")
         #return self.client_repository.save(client)
         #validatinf input data
-    saved_client = Client.create_new_client(data)
+    saved_client, message = Client.create_new_client(data)
     if saved_client:
-        return saved_client
+        return saved_client, message
     else:
         return None        
 def get_all():
