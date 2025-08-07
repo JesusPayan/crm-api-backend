@@ -10,9 +10,12 @@ clients_api = Blueprint('clientsApi', __name__)
 @clients_api.route('/get_clients', methods=['GET'])
 def get_all_clients():
         logger.info("clientsApi.py: Getting all clients")
-        clients = get_all()
-        if clients:
-            return jsonify([client.to_dict() for client in clients])
+        clientsList = get_all()
+        if clientsList:
+            return jsonify({
+            "message": "Clientes encontrados",
+            "data": [client.to_dict() for client in clientsList]
+        }), 200
         else:
             return jsonify({"message": "No clients found"}), 404
         
@@ -20,12 +23,19 @@ def get_all_clients():
 @clients_api.route('/create_client', methods=['POST'])
 def create_client():
         logger.info("clientsApi.py: Creating a new client")
-        data = request.get_json()
-        client = create_new_client(data)
-        if client:
-            return jsonify(client.to_dict()), 201
+        data = request.form
+        if not data:
+            return jsonify({"message": "No data provided"}), 400
         else:
-            return jsonify({"message": "Client not created"}), 400
+
+            client,message = create_new_client(data)
+            if client:
+                return jsonify({
+                "message": message,
+                "data": client.to_dict()
+            }), 201
+            else:
+                return jsonify({"message": "Client not created"}), 400
         
 
 @clients_api.route('/api/clients/<int:id>', methods=['GET'])
@@ -38,21 +48,23 @@ def get_client_by_id(id):
             return jsonify({"message": "Client not found"}), 404
         
 
-@clients_api.route('/api/clients/<int:id>', methods=['PUT'])
-def update_client(id):
-        logger.info("clientsApi.py: Updating a client by id")
-        data = request.get_json()
+# @clients_api.route('/api/clients/update_client_by_id/<int:id>', methods=['PUT'])
+@clients_api.route('/update_client', methods=['PUT'])
+def update_client():
+        data = request.form
+        logger.info("ClientsApi.py: Updating a client...")
         if not data:
             return jsonify({"message": "No data provided"}), 400
         else:
-            data = json.loads(data)
-            client = update_by_id(id, data)
+            # data = json.loads(data)
+            id = data.get('id')
+            client, message = update_by_id(id, data)
             if client:
-                return jsonify(client.to_dict())
+                return jsonify("message", message), 200
             else:
                 return jsonify({"message": "Client not found"}), 404
 
-@clients_api.route('/api/clients/<int:id>', methods=['DELETE'])
+@clients_api.route('/delete_client_by_id/<int:id>', methods=['DELETE'])
 def delete_client(id):
         logger.info("clientsApi.py: Deleting a client by id")
         delete_client_by_id(id)
@@ -64,9 +76,9 @@ def create_new_client(data):
     logger.info(f"Creating new client: {data}")
         #return self.client_repository.save(client)
         #validatinf input data
-    saved_client = Client.create_new_client(data)
+    saved_client, message = Client.create_new_client(data)
     if saved_client:
-        return saved_client
+        return saved_client, message
     else:
         return None        
 def get_all():
