@@ -6,6 +6,8 @@ from app.logger import logger
 from datetime import datetime, timedelta
 from flask import jsonify
 import numbers
+import logging
+from html.parser import commentclose
 
 # Tabla: product
 class Product(db.Model):
@@ -31,43 +33,74 @@ class Product(db.Model):
     access_identifier = Column(String(100))
     access_password = Column(String(100))
     expiration_date = Column(TIMESTAMP)
-    
+    comments = Column(String(255))
     contracts = relationship("Contract", back_populates="product", lazy=True)
     
     @staticmethod
-    def create_new_product(data):
-        if data.get('cve_internal') is None:
-            #calculate cve
-            products = Product.calculate_products_by_description(data.get('description'))
-            logger.info(f"Products with description:{data.get('description')} = {products}")
-            cve_internal = f"{data.get('description', '')[:4]}-{products + 1}"
-        if data.get('description'):
-            product_description = data['description']
-        if data.get('price'):
-            investment = data['price']
-        if data.get('client_profile_price'):
-            client_profile_price = data['client_profile_price']
-        if data.get('client_complete_price'):
-            client_complete_price = data['client_complete_price']
-        if data.get('status'):
-            product_status = data['status']
-        if data.get('status_desc'):
-            product_status_desc = data['status_desc']
-        if data.get('created_by'):
-            product_created_by = data['created_by']
-        if data.get('access_identifier'):
-            product_access_identifier = data['access_identifier']
-        if data.get('access_password'):
-            product_access_password = data['access_password']
-        if data.get('total_profiles'):
-            total_profiles = data['total_profiles']
+    def create_new_product(data,imagePath):
+        cve_internal = None
+        product_description = ""
+        investment = 0
+        client_profile_price = 0
+        client_complete_price = 0
+        product_status = ""
+        product_status_desc = ""
+        product_created_by = ""
+        product_access_identifier = ""
+        product_access_password = ""
+        total_profiles = 1  # para evitar división por cero
+        product_comments = ""
+        product_image = None
+        product_expiration_date = None
 
+        # Clave interna
+        if not data.get('cve_internal'):
+            products = Product.calculate_products_by_description(data.get('description', ''))
+            logger.info(f"Products with description: {data.get('description')} = {products}")
+            cve_internal = f"{data.get('description', '')[:4]}-{products + 1}"
+
+        product_description = data.get('description', '')
+
+        # Conversión segura
+        try:
+            investment = int(data.get('investment', 0))
+        except ValueError:
+            logger.warning("Valor inválido para 'investment'")
+
+        try:
+            client_profile_price = float(data.get('client_profile_price', 0))
+        except ValueError:
+            logger.warning("Valor inválido para 'client_profile_price'")
+
+        try:
+            client_complete_price = float(data.get('client_complete_price', 0))
+        except ValueError:
+            logger.warning("Valor inválido para 'client_complete_price'")
+
+        product_status = data.get('status', '')
+        product_status_desc = data.get('status_desc', '')
+        product_created_by = data.get('created_by', '')
+        product_access_identifier = data.get('access_identifier', '')
+        product_access_password = data.get('access_password', '')
+
+        try:
+            total_profiles = int(data.get('total_profiles'))
+        except ValueError:
+            logger.warning("Valor inválido para 'total_profiles'")
+
+        product_comments = data.get('comments', '')
+        product_image = imagePath  # Asumiendo que imagePath fue definido antes
+        product_expiration_date = data.get('expiration_date', '')
                 
-        # expiration_date and image is pending before frontend conection is done
-        # if data.get('expiration_date'):
-        #         product_expiration_date = data['expiration_date']
-        # if data.get('image'):
-        #     product_image = data['image']
+        try:
+            total_profiles = int(data.get('total_profiles', 1))
+        except ValueError:
+            logger.warning("Valor inválido para 'total_profiles'")
+            
+        if total_profiles > 0:
+            product_profit_profile = client_profile_price - (investment / total_profiles)
+        else:
+            product_profit_profile = 0
 
         new_product = Product(
             cve_internal=cve_internal,
@@ -75,22 +108,23 @@ class Product(db.Model):
             investment=investment,
             client_profile_price=client_profile_price,
             client_complete_price=client_complete_price,
-            product_profit_profile=client_profile_price-(int(investment)/int(total_profiles)),
+            product_profit_profile=product_profit_profile,
             product_profit_per_complete=client_complete_price-investment,
-            # image=product_image,
-            status=product_status,
-            status_desc=product_status_desc,
+            image=product_image,
+            status=1,
+            status_desc='Activo',
             created_at=datetime.now(),
             created_by=product_created_by,
             access_identifier=product_access_identifier,
             access_password=product_access_password,
             total_profiles=total_profiles,
             active_profiles=total_profiles,
-            available_profiles=total_profiles
-            # 
-            # expiration_date=product_expiration_date,
+            available_profiles=total_profiles,
+            comments=product_comments,
+            expiration_date=product_expiration_date
         )
-        logger.info(f"Creating new product input received: {data}")    
+        logger.info(f"Creating new product input received: {data}")   
+        logging.info(f"Creating new product: {new_product}") 
         try:
             db.session.add(new_product)
             db.session.flush()
@@ -106,12 +140,15 @@ class Product(db.Model):
     
     @staticmethod
     def update_product(id, data):
-        product = db.session.query(Product).filter_by(id=id).update(data)
-        if not product:
-            return None
-        else:
+        try:
+            data['updated_at'] = datetime.now()
+            product = db.session.query(Product).filter_by(id=id).update(data)
             db.session.commit()
-            return product
+            return product, "Product updated successfully"
+        except Exception as e: 
+            logger.error(f"Error updating product: {str(e.with_traceback())}")
+            return None
+
     @staticmethod
     def get_by_id(id):
         logger.info(f"models.py: Getting product by id: {id}")

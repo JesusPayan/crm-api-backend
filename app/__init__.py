@@ -11,16 +11,32 @@ import os
 db = SQLAlchemy()
 migrate = Migrate()
 def create_app():
+    # se cargan las variables de entorno
     load_dotenv()
-
+    # se detecta el entorno que se esta ejecutando
+    env = os.getenv('FLASK_ENV', 'development')
+    
     app = Flask(__name__)
     app.config.from_object('app.config.Config')
     CORS(app)
     db.init_app(app)
-    migrate.init_app(app, db)  # <-- Esta línea es nueva
-    # Blueprints
-    # # from app.routes.client_routes import client_bp
-    # app.register_blueprint(client_bp, url_prefix="/api/clients")
+    migrate.init_app(app, db)
+    # UPLOAD_FOLDER = 'uploads'
+    # os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+    # app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+    
+    if env == 'development':
+        print("ENTORNO DESARROLLO")
+        app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DB_URL_DEV')
+        app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+        UPLOAD_FOLDER = os.getenv('UPLOAD_FOLDER_LOCAL')
+    elif env == 'test':
+        app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DB_URL_TEST')
+    else:
+        app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DB_URL_PROD')
+        UPLOAD_FOLDER = os.getenv('UPLOAD_FOLDER_PROD')
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+    app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
     from app.routes.microserviceClients.clientsApi import clients_api
     from app.routes.microservicesProducts.productsApi import products_api
     from app.routes.microserviceContracts.contractsApi import contracts_api

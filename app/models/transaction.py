@@ -6,8 +6,9 @@ from app.logger import logger
 from datetime import datetime, timedelta
 from flask import jsonify
 import numbers
-
-
+from decimal import Decimal
+import logging  
+import traceback
 
 class Transaction(db.Model):
     __tablename__ = 'accounting'
@@ -109,12 +110,17 @@ class Transaction(db.Model):
             # obtenemos los egresos e ingresos
             invents = db.session.query(db.func.sum(Transaction.Transaction_amount)).filter(Transaction.Transaction_type_id == 2)
             income = db.session.query(db.func.sum(Transaction.Transaction_amount)).filter(Transaction.Transaction_type_id == 1)
-            balance = income.scalar() - invents.scalar()
+            #Formateamos el valor recibido de la base de datos
+            income_value = income.scalar() or Decimal('0.00')
+            invest_value = invents.scalar() or Decimal('0.00')
+            #calculamos el balance
+            balance = income_value - invest_value
+            
             logger.info(f"Ingresos {income.scalar()} - Egresos {invents.scalar()} = balance: {balance}")
             if balance < 0:
                 return 0,"No tienes saldo suficiente para realizar la compra"
             else:
                 return balance,"Tienes saldo suficiente para realizar la compra"
         except Exception as e:
-            logger.error(f"Error al obtener los egresos e ingresos: {str(e.with_traceback())}")
-            return None
+            logging.error("Error al obtener los egresos e ingresos:\n%s", traceback.format_exc())
+            return Decimal(0), "Error al consultar el saldo"
