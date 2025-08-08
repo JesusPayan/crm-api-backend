@@ -140,12 +140,14 @@ class Product(db.Model):
     
     @staticmethod
     def update_product(id, data):
-        product = db.session.query(Product).filter_by(id=id).update(data)
-        if not product:
-            return None
-        else:
+        try:
+            product = db.session.query(Product).filter_by(id=id).update(data)
             db.session.commit()
-            return product
+            return product, "Product updated successfully"
+        except Exception as e: 
+            logger.error(f"Error updating product: {str(e.with_traceback())}")
+            return None
+
     @staticmethod
     def get_by_id(id):
         logger.info(f"models.py: Getting product by id: {id}")

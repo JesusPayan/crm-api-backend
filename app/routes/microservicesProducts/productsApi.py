@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request, current_app
-# from app.logger import logger
+# from app.logging import logging
 from app.models.product import Product
 from app.models.transaction import Transaction
 from sqlalchemy.exc import SQLAlchemyError
@@ -9,13 +9,14 @@ import os
 from sqlalchemy import text
 products_api = Blueprint('productsApi', __name__)
 
-@products_api.route('/update_product_by_id/<int:id>', methods=['PUT'])
-def update_current_product(id):
+@products_api.route('/update_product', methods=['PUT'])
+def update_current_product():
+    data = request.form
+    id = data.get('id')
     print("PUT /product endpoint reached", id)
-    data = request.get_json()
-    product_updated = update_product_by_id(id, data)
+    product_updated, message = update_product_by_id(id, data)
     if product_updated:
-        return jsonify({'message': 'Product updated successfully'}), 200
+        return jsonify({'message':message}), 200
     else:
         return jsonify({'message': 'Error updating product'}), 400
 @products_api.route('/delete_all_products', methods=['DELETE'])
@@ -136,17 +137,6 @@ def delete_product_by_identifier(id):
             logging.error(f"Error al eliminar producto por ID: {e.with_traceback()}")
             return False
         
-def delete_product_by_name(name):
-        try:
-            product = Product.query.filter_by(description=name).first()
-            if product:
-                db.session.delete(product)
-                db.session.commit()
-                return True
-            return False
-        except SQLAlchemyError as e:
-            logger.error(f"Error al eliminar producto por nombre: {str(e)}")
-            return False
 def delete_all():
         try:
             products = Product.query.all()
@@ -155,27 +145,21 @@ def delete_all():
             db.session.commit()
             return True
         except SQLAlchemyError as e:
-            logger.error(f"Error al eliminar todos los productos: {str(e)}")
+            logging.error(f"Error al eliminar todos los productos: {str(e)}")
             return False                
 
 def get_all_products():
         try:
             return Product.query.all()
         except SQLAlchemyError as e:
-            logger.error(f"Error al obtener productos: {str(e)}")
+            logging.error(f"Error al obtener productos: {str(e)}")
             return None
 
-def get_product_by_name(name):
-        try:
-            return Product.query.filter_by(description=name).first()
-        except SQLAlchemyError as e:
-            logger.error(f"Error al obtener producto por nombre: {str(e)}")
-            return None
 def  get_by_id(id):
         try:
             return Product.query.filter_by(id=id).first()
         except SQLAlchemyError as e:
-            logger.error(f"Error al obtener producto por ID: {str(e)}")
+            logging.error(f"Error al obtener producto por ID: {str(e)}")
             return None 
 def create_new_product(data,image_path):
         try:
@@ -192,19 +176,7 @@ def create_new_product(data,image_path):
         except SQLAlchemyError as e:
             logging.error(f"Error al crear producto: {str(e)}")
             return None
-def update_product(id, data):
-        try:
-            product = Product.query.filter_by(des).first()
-            if not product:
-                return None
-            for key, value in data.items():
-                if hasattr(product, key):
-                    setattr(product, key, value)
-            db.session.commit()
-            return product
-        except SQLAlchemyError as e:
-            logger.error(f"Error al actualizar producto: {str(e)}")
-            return None
+
 def delete_product_by_id(id):
         try:
             product = Product.query.filter_by(id=id).first()
@@ -214,26 +186,38 @@ def delete_product_by_id(id):
                 return True
             return False
         except SQLAlchemyError as e:
-            logger.error(f"Error al eliminar producto: {str(e)}")
+            logging.error(f"Error al eliminar producto: {str(e)}")
             return False
 
-    # Otros filtros según atributos específicos:
-
-def find_product_by_status(status):
-        return Product.query.filter_by(status_desc=status).all()
-    
 def update_product_by_id(id, data):
-    logger.info(f"Updating product with name: {id} and data: {data}")
+    logging.info(f"Updating product with name: {id} and data: {data}")
     try:
-        product = Product.query.filter_by(id=id).first()
+        product = Product.update_product(id, data)
         if not product:
             return None
-        for key, value in data.items():
-            if hasattr(product, key):
-                    setattr(product, key, value)
-            db.session.commit()
-            return product
+        else:    
+            return product, "Product updated successfully"
     except SQLAlchemyError as e:
-            logger.error(f"Error al actualizar producto: {str(e)}")
+            logging.error(f"Error al actualizar producto: {str(e)}")
             return None 
 
+# def delete_product_by_name(name):
+#         try:
+#             product = Product.query.filter_by(description=name).first()
+#             if product:
+#                 db.session.delete(product)
+#                 db.session.commit()
+#                 return True
+#             return False
+#         except SQLAlchemyError as e:
+#             logging.error(f"Error al eliminar producto por nombre: {str(e)}")
+#             return False
+# def find_product_by_status(status):
+#         return Product.query.filter_by(status_desc=status).all()
+
+# def get_product_by_name(name):
+#         try:
+#             return Product.query.filter_by(description=name).first()
+#         except SQLAlchemyError as e:
+#             logging.error(f"Error al obtener producto por nombre: {str(e)}")
+#             return None
