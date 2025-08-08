@@ -141,6 +141,7 @@ class Product(db.Model):
     @staticmethod
     def update_product(id, data):
         try:
+            data['updated_at'] = datetime.now()
             product = db.session.query(Product).filter_by(id=id).update(data)
             db.session.commit()
             return product, "Product updated successfully"
