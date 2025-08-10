@@ -3,6 +3,7 @@ from app.logger import logger
 from app.models.contract import Contract
 from app.models.product import Product
 from app.models.transaction import Transaction
+from app.models.contract_summary import ContractSummary
 from sqlalchemy.exc import SQLAlchemyError
 from app import db
 from datetime import datetime, timedelta
@@ -52,14 +53,25 @@ def delete_contract(contract_id):
         else:
             return jsonify({'message': 'Error deleting contract'}), 400
 
-@contracts_api.route('v1/contracts', methods=['GET'])
+
+@contracts_api.route('/get_contracts_summary', methods=['GET'])
 def get_contracts():
-        print("GET /contracts endpoint reached")
-        contracts = get_all_contracts()
-        if contracts:
-            return jsonify({'contracts': [contract.to_dict() for contract in contracts]}), 200
-        else:
-            return jsonify({'message': 'Error getting contracts'}), 400
+    contracts_list, message = get_all_contracts()
+    if contracts_list:
+        # 
+        return contracts_list
+    else:
+        return jsonify({'message': 'Error getting contracts'}), 400
+# def get_contracts():
+#         print("GET /contracts endpoint reached")
+#         contracts_list, message = get_all_contracts()
+#         if contracts_list:
+#             # return jsonify({'message':message,'data': [ContractSummary.to_dict() for contract in contracts_list]}), 200
+#             return jsonify({'message':message,'data': contracts_list}), 200
+#             # contracts_list = [dict(row._mapping) for row in contracts]
+#             # return jsonify({'message':message,'data': contracts_list}), 200
+#         else:
+#             return jsonify({'message': 'Error getting contracts'}), 400
 
 @contracts_api.route('v1/contracts/<int:id>', methods=['GET'])
 def get_contract_by_id(contract_id):
@@ -70,9 +82,10 @@ def get_contract_by_id(contract_id):
         else:
             return jsonify({'message': 'Contract not found'}), 404
 
-def get_all_contracts(self):
+def get_all_contracts():
         try:
-            return Contract.query.all()
+            return ContractSummary.get_all(), "Contratos obtenidos exitosamente"
+        
         except SQLAlchemyError as e:
             logger.error(f"Error al obtener contratos: {str(e)}")
             return None

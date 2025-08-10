@@ -33,7 +33,7 @@ class Transaction(db.Model):
     def get_all_transactions():
         transactions = db.session.query(Transaction).all()
         return transactions
-    def to_dict(self):
+    def to_dict():
         return {
                 "id":self.id,
                 "Transaction_type_id":self.Transaction_type_id,
