@@ -48,6 +48,11 @@ def create_app():
     app.register_blueprint(contracts_api, url_prefix="/v1/contracts")
     app.register_blueprint(catalogs_api, url_prefix="/v1/catalogs")
     
+    
+    print("\n📜 Rutas registradas en Flask:")
+    for rule in app.url_map.iter_rules():
+        methods = ', '.join(sorted(rule.methods - {'HEAD', 'OPTIONS'}))
+        print(f"{methods:10} {rule}")
 # http://127.0.0.1:5000/v1/clients/api/create
 
     return app

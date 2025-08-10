@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify, request
 from app.logger import logger
+from app.models.client_summary import ClientSummary
 from app.models.client import Client
 import json
 
@@ -37,6 +38,19 @@ def create_client():
             else:
                 return jsonify({"message": "Client not created"}), 400
         
+@clients_api.route('/get_clients_summary', methods=['GET'])
+def get_contracts_summary():
+    logger.info("clientsApi.py: Getting  clients summary")
+    clientsSummaryList = get_all_summary()
+    if clientsSummaryList:
+        # return jsonify({
+        #     "message": "Clientes encontrados",
+        #     "data": [client.to_dict() for client in clientsSummaryList]
+        # }), 200
+        return clientsSummaryList
+    else:
+        return jsonify({"message": "No clients found"}), 404
+    
 
 @clients_api.route('/api/clients/<int:id>', methods=['GET'])
 def get_client_by_id(id):
@@ -93,3 +107,7 @@ def update_by_id(id,data):
 def delete_client_by_id(id):
         logger.info(f"Deleting client by id: {id}")
         return Client.delete_client(id)
+    
+def get_all_summary():
+        logger.info("Getting all clients summary")
+        return ClientSummary.get_all()
