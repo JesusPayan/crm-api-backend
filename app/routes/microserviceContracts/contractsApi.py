@@ -15,10 +15,10 @@ def update_day_left():
     print("PUT /contract endpoint reached")
     update_contracts_day_left()
     return jsonify({'message': 'Day left updated successfully'}), 200
-@contracts_api.route('/add_contract', methods=['POST'])
+@contracts_api.route('/create_contract', methods=['POST'])
 def add_contract():
     print("POST /contract-add endpoint reached")
-    data = request.get_json()
+    data = request.form
     if data:
         print(f"POST /contract-add endpoint reached {data}")
         logger.info(f"Contrato recibido: {data}")
@@ -110,14 +110,19 @@ def create_new_contract(data):
                 if data['contract_type'] is not None: contract_type = data['contract_type']   
                 if data['product_name'] is not None: product_name = data['product_name']
                 if data['created_by'] is not None: created_by = data['created_by']
-                if data['duration'] is not None: duration = data['duration']
+                if data['contract_duration'] is not None: duration = data['contract_duration']
                 duration = calculate_duration(duration)
+                if contract_type == 'Perfil':
+                    contract_type = 1;
+                elif contract_type == 'Completa':
+                    contract_type = 2;
+                else:
+                    contract_type = 3;
                     
                 new_contract,message = Contract.create_contract(client_id,product_name, contract_type, created_by,duration)
                 #se agrega la logica para llevar el control de las transacciones $$
                 if new_contract:
                     Transaction.add_transaction(1, new_contract.total_price, new_contract.client_id, new_contract.id)
-
                 return new_contract,message 
             return None
         except SQLAlchemyError as e:

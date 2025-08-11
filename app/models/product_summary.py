@@ -9,7 +9,7 @@ import json
 
 class ProductSummary(db.Model):
     __tablename__ = 'product_sumary'
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True) 
     product_name = Column(String(255))
   
 
