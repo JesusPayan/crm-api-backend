@@ -41,15 +41,18 @@ def create_app():
     from app.routes.microservicesProducts.productsApi import products_api
     from app.routes.microserviceContracts.contractsApi import contracts_api
     from app.routes.microserviceCatalogs.catalogsApi import catalogs_api
+    from app.routes.microserviceTransactions.transactionsApi import transaction_api
     from app.routes.test_routes import test_bp
     app.register_blueprint(test_bp)
     app.register_blueprint(clients_api, url_prefix="/v1/clients")
     app.register_blueprint(products_api, url_prefix="/v1/products")
     app.register_blueprint(contracts_api, url_prefix="/v1/contracts")
     app.register_blueprint(catalogs_api, url_prefix="/v1/catalogs")
+    app.register_blueprint(transaction_api, url_prefix="/v1/transactions")
     
     
     print("\n📜 Rutas registradas en Flask:")
+    
     for rule in app.url_map.iter_rules():
         methods = ', '.join(sorted(rule.methods - {'HEAD', 'OPTIONS'}))
         print(f"{methods:10} {rule}")
