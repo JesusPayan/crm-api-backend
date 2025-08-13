@@ -3,6 +3,7 @@ from app.logger import logger
 from app.models.contract import Contract
 from app.models.product import Product
 from app.models.transaction import Transaction
+from app.models.contract_summary import ContractSummary
 from sqlalchemy.exc import SQLAlchemyError
 from app import db
 from datetime import datetime, timedelta
@@ -14,10 +15,10 @@ def update_day_left():
     print("PUT /contract endpoint reached")
     update_contracts_day_left()
     return jsonify({'message': 'Day left updated successfully'}), 200
-@contracts_api.route('/add_contract', methods=['POST'])
+@contracts_api.route('/create_contract', methods=['POST'])
 def add_contract():
     print("POST /contract-add endpoint reached")
-    data = request.get_json()
+    data = request.form
     if data:
         print(f"POST /contract-add endpoint reached {data}")
         logger.info(f"Contrato recibido: {data}")
@@ -52,14 +53,25 @@ def delete_contract(contract_id):
         else:
             return jsonify({'message': 'Error deleting contract'}), 400
 
-@contracts_api.route('v1/contracts', methods=['GET'])
+
+@contracts_api.route('/get_contracts_summary', methods=['GET'])
 def get_contracts():
-        print("GET /contracts endpoint reached")
-        contracts = get_all_contracts()
-        if contracts:
-            return jsonify({'contracts': [contract.to_dict() for contract in contracts]}), 200
-        else:
-            return jsonify({'message': 'Error getting contracts'}), 400
+    contracts_list, message = get_all_contracts()
+    if contracts_list:
+        # 
+        return contracts_list
+    else:
+        return jsonify({'message': 'Error getting contracts'}), 400
+# def get_contracts():
+#         print("GET /contracts endpoint reached")
+#         contracts_list, message = get_all_contracts()
+#         if contracts_list:
+#             # return jsonify({'message':message,'data': [ContractSummary.to_dict() for contract in contracts_list]}), 200
+#             return jsonify({'message':message,'data': contracts_list}), 200
+#             # contracts_list = [dict(row._mapping) for row in contracts]
+#             # return jsonify({'message':message,'data': contracts_list}), 200
+#         else:
+#             return jsonify({'message': 'Error getting contracts'}), 400
 
 @contracts_api.route('v1/contracts/<int:id>', methods=['GET'])
 def get_contract_by_id(contract_id):
@@ -70,9 +82,10 @@ def get_contract_by_id(contract_id):
         else:
             return jsonify({'message': 'Contract not found'}), 404
 
-def get_all_contracts(self):
+def get_all_contracts():
         try:
-            return Contract.query.all()
+            return ContractSummary.get_all(), "Contratos obtenidos exitosamente"
+        
         except SQLAlchemyError as e:
             logger.error(f"Error al obtener contratos: {str(e)}")
             return None
@@ -97,14 +110,19 @@ def create_new_contract(data):
                 if data['contract_type'] is not None: contract_type = data['contract_type']   
                 if data['product_name'] is not None: product_name = data['product_name']
                 if data['created_by'] is not None: created_by = data['created_by']
-                if data['duration'] is not None: duration = data['duration']
+                if data['contract_duration'] is not None: duration = data['contract_duration']
                 duration = calculate_duration(duration)
+                if contract_type == 'Perfil':
+                    contract_type = 1;
+                elif contract_type == 'Completa':
+                    contract_type = 2;
+                else:
+                    contract_type = 3;
                     
                 new_contract,message = Contract.create_contract(client_id,product_name, contract_type, created_by,duration)
                 #se agrega la logica para llevar el control de las transacciones $$
                 if new_contract:
                     Transaction.add_transaction(1, new_contract.total_price, new_contract.client_id, new_contract.id)
-
                 return new_contract,message 
             return None
         except SQLAlchemyError as e:

@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request, current_app
 # from app.logging import logging
 from app.models.product import Product
+from app.models.product_summary import ProductSummary
 from app.models.transaction import Transaction
 from sqlalchemy.exc import SQLAlchemyError
 from app import db
@@ -9,6 +10,11 @@ import os
 from sqlalchemy import text
 products_api = Blueprint('productsApi', __name__)
 
+@products_api.route('/get_products_summary', methods=['GET'])
+def get_products_summary():
+    products_list = ProductSummary.get_all()
+    if products_list:
+        return products_list
 @products_api.route('/update_product', methods=['PUT'])
 def update_current_product():
     data = request.form

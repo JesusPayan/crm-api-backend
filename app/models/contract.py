@@ -7,6 +7,8 @@ from datetime import datetime, timedelta
 from flask import jsonify
 from app.models.product import Product
 import numbers
+import logging
+from sqlalchemy import text
 
 
 
@@ -34,9 +36,21 @@ class Contract(db.Model):
     client = relationship("Client", back_populates="contracts")
     product = relationship("Product", back_populates="contracts")
     @staticmethod
-    def get_all_contracts():
-        contracts = db.session.query(Contract).all()
-        return contracts
+    def get_contracts_sumary():
+        # try:
+        #     contracts = db.session.execute(text("SELECT * FROM contract_sumary")).mappings().all
+        #     return contracts, "Contratos obtenidos exitosamente"
+        # except Exception as e:
+        #     logger.error(f"Error al obtener contratos: {str(e)}")
+        #     return None, "Error al obtener contratos"
+        try:
+            contracts = db.session.query(Contract).from_statement(
+            text("SELECT * FROM contract_sumary")
+        ).all()
+            return contracts, "Contratos obtenidos exitosamente"
+        except Exception as e:
+            logger.error(f"Error al obtener contratos: {str(e)}")
+            return [], "Error al obtener contratos"
     @staticmethod
     def get_by_id(id):
         contract = db.session.query(Contract).filter_by(id=id).first()
