@@ -9,6 +9,9 @@ import numbers
 from decimal import Decimal
 import logging  
 import traceback
+from sqlalchemy.sql import text
+import json
+
 
 class Transaction(db.Model):
     __tablename__ = 'accounting'
@@ -124,3 +127,21 @@ class Transaction(db.Model):
         except Exception as e:
             logging.error("Error al obtener los egresos e ingresos:\n%s", traceback.format_exc())
             return Decimal(0), "Error al consultar el saldo"
+    @staticmethod
+    def get_balance_summary():
+        json_results = []
+    # Obtenemos el balance actual de la cuenta
+        try:
+            # obtenemos los egresos e ingresos
+            result = db.session.execute(text("select * from transaction_sumary")).all()
+            if result:            
+                for row in result:
+                    print(row)
+                    json_results.append(row._asdict())
+                    # row_dict = {column.name: getattr(row, column.name) for column in row.__table__.columns}
+                    # json_object = json.dumps(row_dict)
+                    # json_results.append(json_object)
+                return json_results, "Clientes obtenidos exitosamente"
+        except Exception as e:
+            logging.error("Error al obtener los egresos e ingresos:\n%s", traceback.format_exc())
+            return

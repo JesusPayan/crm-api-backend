@@ -3,6 +3,7 @@ from app.logger import logger
 from app.models.client_summary import ClientSummary
 from app.models.client import Client
 import json
+import pandas as pd
 
 clients_api = Blueprint('clientsApi', __name__)
 # http://127.0.0.1:5000/v1/clients/api/clients
@@ -20,7 +21,31 @@ def get_all_clients():
         else:
             return jsonify({"message": "No clients found"}), 404
         
-
+@clients_api.route('/import_clients', methods=['POST'])
+def import_clienst():
+        logger.info("clientsApi.py: Creating a new client")
+        file = request.files['file']
+        if not file:
+            return jsonify({"message": "No se envio ningun archivo"}), 400
+        else:
+            #se envio un archivo para su procesamiento 
+            existing_clients,message,imported_clients = import_new_clients(file)
+            if imported_clients and existing_clients:
+                return jsonify({
+                    "message": f"Se importaron {len(imported_clients)} clientes exitosamente ya existian {len(existing_clients)} clientes",
+                }),200
+            elif imported_clients:
+                return jsonify({
+                    "message": f"Se importaron {len(imported_clients)} clientes exitosamente",
+                }),200
+            elif existing_clients:
+                return jsonify({
+                    "message": f"Ya existian {len(existing_clients)} clientes",
+                }),200
+            else:
+                return jsonify({
+                    f"message": "No se importaron clientes",
+                }),400
 @clients_api.route('/create_client', methods=['POST'])
 def create_client():
         logger.info("clientsApi.py: Creating a new client")
@@ -62,7 +87,6 @@ def get_client_by_id(id):
             return jsonify({"message": "Client not found"}), 404
         
 
-# @clients_api.route('/api/clients/update_client_by_id/<int:id>', methods=['PUT'])
 @clients_api.route('/update_client', methods=['PUT'])
 def update_client():
         data = request.form
@@ -111,3 +135,44 @@ def delete_client_by_id(id):
 def get_all_summary():
         logger.info("Getting all clients summary")
         return ClientSummary.get_all()
+def import_new_clients(file):
+    logger.info(f"Importing new clients: {file}")
+    try:
+        # leer el archivo CSV con pandas
+        df = pd.read_csv(file)
+
+        # validar que tenga las columnas necesarias
+        required_columns = ["name", "mother_lastname", "father_lastname", "telephone1", "email1", "created_by"]
+        for col in required_columns:
+            if col not in df.columns:
+                return None, f"El CSV no contiene la columna requerida: {col}"
+
+        # convertir a lista de registros
+        records = df[required_columns].values.tolist()
+
+        imported_clients = []
+        existing_clients = []
+        for record in records:
+            existing_client, message = Client.existing_client(record)
+            if  existing_client:
+                logger.info(f"Client already exists: {existing_clients}")
+                existing_clients.append(existing_clients)
+                continue
+            else:
+                logger.info(f"Client does not exist: {existing_client}")
+                saved_client,message = Client.create_new_clients(record)
+                if saved_client:
+                    logger.info(f"Client created: {saved_client}")
+                    imported_clients.append(saved_client)
+                else:
+                    logger.error(f"Error creating client: {saved_client}")
+
+        return existing_clients,message,imported_clients
+    
+    except Exception as e:
+        logger.error(f"Error importing new clients: {str(e)}")
+        return None, f"Error al importar clientes: {str(e)}"
+    
+    
+    
+    

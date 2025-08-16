@@ -8,6 +8,7 @@ from flask import jsonify
 import numbers
 
 
+
 # Tabla: client
 class Client(db.Model):
     __tablename__ = 'client'
@@ -58,11 +59,47 @@ class Client(db.Model):
             return client, "Cliente actualizado exitosamente"
         else:
             return None
+    @staticmethod
+    def existing_client(data):
+        existingClient = Client.query.filter_by(name=data[0], father_lastname=data[1], mother_lastname=data[2], telephone1=data[3], email1=data[4]).first()
+        if existingClient:
+            logger.info(f"Client already exists: {existingClient}")
+            return existingClient, "El cliente ya existe"
+        else:
+            logger.info(f"Client does not exist:")
+            return None, "El cliente no existe"
+    @staticmethod
+    def create_new_clients(data):
+        logger.info(f"Creating new client input received: {data}")
+        importedClient = None
 
+
+
+        new_client = Client(
+                    name=data[0],
+                    father_lastname=data[1],
+                    mother_lastname=data[2],
+                    status=1,
+                    status_desc="Activo",
+                    telephone1=data[3],
+                    # telephone2=data['telephone2'] or data['telephone1'],
+                    email1=data[4],
+                    created_by=data[5],
+                    created_at=datetime.now()
+        )
+        try:
+            db.session.add(new_client)
+            db.session.flush()
+            db.session.commit()
+            return new_client, "Cliente creado exitosamente"
+        except Exception as e:
+                    logger.error(f"Error creating new client: {str(e)}")
+                    return None, "Error al crear el cliente"
 
     @staticmethod
     def create_new_client(data):
         logger.info(f"Creating new client input received: {data}")
+        
         new_client = Client(
             name=data.get('name'),
             father_lastname=data.get('father_lastname'),
@@ -80,7 +117,7 @@ class Client(db.Model):
             db.session.add(new_client)
             db.session.flush()
             db.session.commit()
-            return new_client,"Cliente creado exitosamente"
+            return new_client, "Cliente creado exitosamente"
         except Exception as e:
             logger.error(f"Error creating new client: {str(e)}")
 
