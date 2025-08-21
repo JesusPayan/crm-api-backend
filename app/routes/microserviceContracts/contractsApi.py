@@ -30,13 +30,13 @@ def add_contract():
                 "data": contract_saved.to_dict()
             }), 201
         else:
-            return jsonify({"message": f"Error al agregar el contrato, {message}"}), 400
+            return jsonify({"message":  message}), 200
     else:
         return jsonify({"message": "No se recibió información válida"}), 400
 @contracts_api.route('/renovate_contract/<int:id>', methods=['PUT'])
 def renovate_contract(id):
         print("PUT /contract endpoint reached", id)
-        data = request.get_json()
+        data = request.form
         print("PUT /contract endpoint reached", data)
         contract_updated = renovate_contract_by_id(id, data)
         if contract_updated:
@@ -44,10 +44,10 @@ def renovate_contract(id):
         else:
             return jsonify({'message': 'Error updating contract'}), 400     
 
-@contracts_api.route('v1/contracts/<int:id>', methods=['DELETE'])
-def delete_contract(contract_id):
-        print("DELETE /contract endpoint reached", contract_id)
-        contract_deleted = delete_contract_by_id(contract_id)
+@contracts_api.route('/delete_contract/<int:id>', methods=['DELETE'])
+def delete_contract(id):
+        print("DELETE /contract endpoint reached", id)
+        contract_deleted = delete_contract_by_id(id)
         if contract_deleted:
             return jsonify({'message': 'Contract deleted successfully'}), 200
         else:
@@ -62,16 +62,6 @@ def get_contracts():
         return contracts_list
     else:
         return jsonify({'message': 'Error getting contracts'}), 400
-# def get_contracts():
-#         print("GET /contracts endpoint reached")
-#         contracts_list, message = get_all_contracts()
-#         if contracts_list:
-#             # return jsonify({'message':message,'data': [ContractSummary.to_dict() for contract in contracts_list]}), 200
-#             return jsonify({'message':message,'data': contracts_list}), 200
-#             # contracts_list = [dict(row._mapping) for row in contracts]
-#             # return jsonify({'message':message,'data': contracts_list}), 200
-#         else:
-#             return jsonify({'message': 'Error getting contracts'}), 400
 
 @contracts_api.route('v1/contracts/<int:id>', methods=['GET'])
 def get_contract_by_id(contract_id):
@@ -114,7 +104,7 @@ def create_new_contract(data):
                 duration = calculate_duration(duration)
                 if contract_type == 'Perfil':
                     contract_type = 1;
-                elif contract_type == 'Completa':
+                elif contract_type == 'Completa' or contract_type == 'Cuenta completa':
                     contract_type = 2;
                 else:
                     contract_type = 3;
@@ -142,7 +132,7 @@ def update_contract_by_id(self, id, data):
         except SQLAlchemyError as e:
             logger.error(f"Error al actualizar contrato: {str(e)}")
             return None
-def delete_contract_by_id(self, id):
+def delete_contract_by_id(id):
     logger.info(f"Deleting contract with id: {id}")
     contract = Contract.query.filter_by(id=id).first()
     if contract:
@@ -162,7 +152,7 @@ def renovate_contract_by_id(id, data):
             contract.end_date = datetime.now() + timedelta(days=30)
             contract.days_left = 30
             contract.updated_at = datetime.now()
-            contract.updated_by = data['renovate_by']
+            contract.updated_by = data.get('renovate_by')
             contract.status = 1
             contract.status_desc = "Activo"
             db.session.commit()
@@ -180,6 +170,9 @@ def update_contracts_day_left():
             if contract.days_left <= 0:
                 contract.status = 2
                 contract.status_desc = "Vencido"
+            elif contract.days_left <= 5:
+                contract.status = 3
+                contract.status_desc = "Proximo a vencer"
             db.session.commit()
             
             

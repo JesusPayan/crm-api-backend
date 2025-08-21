@@ -23,7 +23,7 @@ def get_all_clients():
         
 @clients_api.route('/import_clients', methods=['POST'])
 def import_clienst():
-        logger.info("clientsApi.py: Creating a new client")
+        logger.info("Import Api.py: Importing clients")
         file = request.files['file']
         if not file:
             return jsonify({"message": "No se envio ningun archivo"}), 400

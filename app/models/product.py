@@ -37,6 +37,75 @@ class Product(db.Model):
     contracts = relationship("Contract", back_populates="product", lazy=True)
     
     @staticmethod
+    def import_product(data):
+        #definimos variables
+        cve_internal = None
+        product_description = ""
+        investment = 0
+        client_profile_price = 0
+        client_complete_price = 0
+        product_status = ""
+        product_status_desc = ""
+        product_created_by = ""
+        product_access_identifier = ""
+        product_access_password = ""
+        total_profiles = 1  # para evitar división por cero
+        product_comments = ""
+        product_image = None
+        product_expiration_date = None
+        product_profit_profile = 0
+        product_profit_per_complete = 0
+        # description,investment,client_profile_price,client_complete_price,total_profiles,access_identifier,access_password,expiration_date,created_by
+        products = Product.calculate_products_by_description(data[0])
+        logging.info(f"Products with description: {data[0]} = {products}")
+        cve_internal = f"{data[0][:4]}-{products + 1}"
+        product_description = data[0]
+        investment = data[1]
+        client_profile_price = int(data[2]) 
+        client_complete_price = int(data[3])
+        total_profiles = data[4]
+        product_access_identifier = data[5]
+        product_access_password = data[6]
+        product_status = 1
+        product_status_desc = "Activo"
+        product_expiration_date = data[8]
+        product_created_by = data[7]
+        
+       
+        # product_comments = data[10]
+        # product_image = data[11]
+        if total_profiles > 0:
+            product_profit_profile = client_profile_price - (investment / total_profiles)
+            product_profit_per_complete = client_complete_price - product_profit_per_complete
+       
+        new_product = Product(
+            cve_internal=cve_internal,
+            description=product_description,
+            investment=investment,
+            client_profile_price=client_profile_price,
+            client_complete_price=client_complete_price,
+            status=product_status,
+            status_desc=product_status_desc,
+            created_by=product_created_by,
+            access_identifier=product_access_identifier,
+            access_password=product_access_password,
+            total_profiles=total_profiles,
+            product_profit_profile=product_profit_profile,
+            product_profit_per_complete=product_profit_per_complete,
+            created_at=datetime.now(),
+            active_profiles=0,
+            available_profiles=total_profiles,
+    
+            # comments=product_comments,
+            # image=product_image,
+            expiration_date = datetime.strptime(product_expiration_date, "%m/%d/%y").date()
+        )
+        db.session.add(new_product)
+        db.session.commit()
+
+        return new_product, "Producto importado correctamente"
+        
+    @staticmethod
     def create_new_product(data,imagePath):
         cve_internal = None
         product_description = ""
@@ -57,7 +126,6 @@ class Product(db.Model):
         if not data.get('cve_internal'):
             products = Product.calculate_products_by_description(data.get('description', ''))
             logger.info(f"Products with description: {data.get('description')} = {products}")
-            cve_internal = f"{data.get('description', '')[:4]}-{products + 1}"
 
         product_description = data.get('description', '')
 
@@ -77,8 +145,8 @@ class Product(db.Model):
         except ValueError:
             logger.warning("Valor inválido para 'client_complete_price'")
 
-        product_status = data.get('status', '')
-        product_status_desc = data.get('status_desc', '')
+        product_status = data.get('status', '') or 1
+        product_status_desc = data.get('status_desc', '') or "Activo"
         product_created_by = data.get('created_by', '')
         product_access_identifier = data.get('access_identifier', '')
         product_access_password = data.get('access_password', '')
@@ -118,7 +186,7 @@ class Product(db.Model):
             access_identifier=product_access_identifier,
             access_password=product_access_password,
             total_profiles=total_profiles,
-            active_profiles=total_profiles,
+            active_profiles=0,
             available_profiles=total_profiles,
             comments=product_comments,
             expiration_date=product_expiration_date

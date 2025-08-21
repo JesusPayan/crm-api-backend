@@ -8,6 +8,8 @@ from app import db
 import logging
 import os
 from sqlalchemy import text
+from app.utils import get_list_from_csv
+
 products_api = Blueprint('productsApi', __name__)
 
 @products_api.route('/get_products_summary', methods=['GET'])
@@ -97,7 +99,24 @@ def get_product_by_id(id):
         return jsonify({
             "message": "Producto no encontrado"
             }), 404
-@products_api.route('/create_product', methods=['POST'])
+@products_api.route('/import_products', methods=['POST'])
+def import_products():
+    file = request.files['file']
+    if file:
+        if file.filename != "products.csv":
+            return jsonify({"message": "El archivo debe llamarse products.csv"}), 400
+        else:
+            logging.info(f"POST /import endpoint reached input:{file}")
+            message, products_saved = import_products_from_csv(file)
+            logging.info(f"Productos guardados: {products_saved}")
+            if products_saved:
+                return jsonify({
+                    "message": message,
+                    "data": products_saved.to_dict()
+                }), 201
+            else:
+                return jsonify({"message": message}), 400
+@products_api.route('/create_product', methods=['POST']) 
 def add_product():
     if 'image' not in request.files:
         return jsonify({"message": "No se ha seleccionado ninguna imagen"}), 400
@@ -207,23 +226,26 @@ def update_product_by_id(id, data):
             logging.error(f"Error al actualizar producto: {str(e)}")
             return None 
 
-# def delete_product_by_name(name):
-#         try:
-#             product = Product.query.filter_by(description=name).first()
-#             if product:
-#                 db.session.delete(product)
-#                 db.session.commit()
-#                 return True
-#             return False
-#         except SQLAlchemyError as e:
-#             logging.error(f"Error al eliminar producto por nombre: {str(e)}")
-#             return False
-# def find_product_by_status(status):
-#         return Product.query.filter_by(status_desc=status).all()
-
-# def get_product_by_name(name):
-#         try:
-#             return Product.query.filter_by(description=name).first()
-#         except SQLAlchemyError as e:
-#             logging.error(f"Error al obtener producto por nombre: {str(e)}")
-#             return None
+def import_products_from_csv(file):
+        logging.info(f" Services - Importing products from CSV")
+        #definimos la lista de colunas requeridas
+        required_columns = ["description","investment","client_profile_price","client_complete_price","total_profiles","access_identifier","access_password","created_by","expiration_date"]
+        list_imported_products = get_list_from_csv(file,required_columns)
+        if list_imported_products:
+            for product in list_imported_products:
+                current_balance,message = Transaction.get_current_balance() 
+                if current_balance:
+                    saved_product,message = Product.import_product(product)
+                    Transaction.add_transaction(2, saved_product.investment, 0,0)
+                    if saved_product:
+                        logging.info(f"Product created: {saved_product}")
+                    else:
+                        logging.error(f"Error creating product: {saved_product}")
+                        return None,f"Error creating product: {saved_product}",None
+                else:
+                    logging.error(f"Error importing products from CSV: {list_imported_products}")
+                    return None,f"Error importing products from CSV: {list_imported_products}"
+        else:
+            logging.error(f"Error importing products from CSV: {list_imported_products}")
+            return None,f"Error importing products from CSV: {list_imported_products}"
+        return message,saved_product
