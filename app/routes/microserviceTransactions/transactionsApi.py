@@ -32,7 +32,33 @@ def get_balance_summary():
         }), 200
     else:
         return jsonify({'message': 'No balance found'}), 404
-    
+
+@transaction_api.route('/add_funds', methods=['POST'])
+def add_funds():
+    try:
+        data = request.form  # porque envías FormData desde Angular
+        message,code = add_funds_service(data)
+        return jsonify({"message": message}), code
+        # Aquí iría la lógica para guardar en DB...
+        # db.insert_funds(amount, client_id, contract_id)
+
+    except Exception as e:
+        logging.error(f"Error en /add_funds: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+def add_funds_service(data):
+    logging.info("Service add funds")
+    amount = data.get('amount')
+    client_id =  1
+    contract_id = 1
+    found,message = Transaction.add_transaction(3, amount, client_id, contract_id)
+    if found and message == "Transacción creada con exito":
+        message = "Fondos agregados con exito"
+        code = 200
+    else:
+        message = "Error al agregar fondos"
+        code = 400
+    return message,code       
 def get_transactions():
     logging.info("Service get all Transactions")
     transaction_list = Transaction.get_all_transactions()

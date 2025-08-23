@@ -8,6 +8,7 @@ from flask import jsonify
 import numbers
 import logging
 from html.parser import commentclose
+from flask.globals import current_app
 
 # Tabla: product
 class Product(db.Model):
@@ -209,12 +210,18 @@ class Product(db.Model):
     @staticmethod
     def update_product(id, data):
         try:
-            data['updated_at'] = datetime.now()
-            product = db.session.query(Product).filter_by(id=id).update(data)
+            # data.update(updated_at = datetime.now()
+            current_product = db.session.query(Product).filter_by(id=id).first()
+            if not current_product:
+                return None
+            
+            current_product.__dict__.update(data)
+            current_product.updated_at = datetime.now()
+            # product = db.session.query(Product).filter_by(id=id).update(data)
             db.session.commit()
-            return product, "Product updated successfully"
+            return current_product, "Producto actualizado exitosamente"
         except Exception as e: 
-            logger.error(f"Error updating product: {str(e.with_traceback())}")
+            logger.error(f"Error al actualizar producto: {e}")
             return None
 
     @staticmethod
@@ -286,5 +293,7 @@ class Product(db.Model):
             "updated_by": self.updated_by,
             "access_identifier": self.access_identifier,
             "access_password": self.access_password,
+            "comments": self.comments,
             "expiration_date": self.expiration_date
+            
         }    

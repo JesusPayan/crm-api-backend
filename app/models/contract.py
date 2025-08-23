@@ -98,7 +98,6 @@ class Contract(db.Model):
                 product_id=product.id,
                 start_date=datetime.now(),
                 contract_type=contract_type,
-                #Se asumira que la contratacion es de 30 dias
                 end_date=datetime.now() + timedelta(days=duration),
                 days_left=duration,
                 status=1,
@@ -120,6 +119,8 @@ class Contract(db.Model):
             #actualizamos el total de perfiles disponibles
             if contract_type == 1:
                 product.available_profiles -= 1
+                #actualizamos el total de perfiles contratados
+                product.active_profiles += 1
             if contract_type == 2:    
                 product.available_profiles -= product.total_profiles
             db.session.commit()
@@ -137,6 +138,8 @@ class Contract(db.Model):
             "start_date": self.start_date.isoformat() if self.start_date else None,
             "end_date": self.end_date.isoformat() if self.end_date else None,
             "status": self.status,
+            "contract_type": self.contract_type,
+            "contract_type_desc": self.contract_type_desc,
             "status_desc": self.status_desc,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "created_by": self.created_by,

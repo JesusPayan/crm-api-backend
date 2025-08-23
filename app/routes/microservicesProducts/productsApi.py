@@ -43,16 +43,16 @@ def delete_product(id):
         return jsonify({'message': 'Product deleted successfully'}), 200
     else:
         return jsonify({'message': 'Error deleting product'}), 400
-@products_api.route('/delete_product_by_name/<string:name>', methods=['DELETE'])
-def delete_product_by_description(name):
-    print("DELETE /product endpoint reached", name)
-    product_deleted = delete_product(name)
-    if product_deleted:
-        return jsonify({"message": "Producto eliminado correctamente"}), 200
-    else:
-        return jsonify({"message": "Error al eliminar el producto"}), 400
-@products_api.route('/get_product_by_status/<string:status>', methods=['GET'])
-def get_product_by_status(status):
+# @products_api.route('/delete_product_by_name/<string:name>', methods=['DELETE'])
+# def delete_product_by_description(name):
+#     print("DELETE /product endpoint reached", name)
+#     product_deleted = delete_product(name)
+#     if product_deleted:
+#         return jsonify({"message": "Producto eliminado correctamente"}), 200
+#     else:
+#         return jsonify({"message": "Error al eliminar el producto"}), 400
+# @products_api.route('/get_product_by_status/<string:status>', methods=['GET'])
+# def get_product_by_status(status):
     print("GET /product_by_status endpoint reached for status:", status) 
     products_list = find_product_by_status(status)
     if products_list:
@@ -75,30 +75,30 @@ def get_products():
         }), 200
     else:    
         return jsonify({"message": "Productos no encontrados"}), 404
-@products_api.route('/get_product/<string:name>', methods=['GET'])
-def get_product(name):
-    print("GET /product endpoint reached")
-    product = get_product_by_name(name)
-    if product:
-        return jsonify({
-            "message": "Producto encontrado",
-            "data": product.to_dict()
-        }), 200
-    else:    
-        return jsonify({"message": "Producto no encontrado"}), 404
-@products_api.route('/get_product_by_id/<int:id>', methods=['GET'])
-def get_product_by_id(id):
-    print("GET /product endpoint reached")
-    product = get_by_id(id)
-    if product:
-        return jsonify({
-            "message": "Producto encontrado",  
-            "data": product.to_dict()
-        }), 200
-    else:    
-        return jsonify({
-            "message": "Producto no encontrado"
-            }), 404
+# @products_api.route('/get_product/<string:name>', methods=['GET'])
+# def get_product(name):
+#     print("GET /product endpoint reached")
+#     product = get_product_by_name(name)
+#     if product:
+#         return jsonify({
+#             "message": "Producto encontrado",
+#             "data": product.to_dict()
+#         }), 200
+#     else:    
+#         return jsonify({"message": "Producto no encontrado"}), 404
+# @products_api.route('/get_product_by_id/<int:id>', methods=['GET'])
+# def get_product_by_id(id):
+#     print("GET /product endpoint reached")
+#     product = get_by_id(id)
+#     if product:
+#         return jsonify({
+#             "message": "Producto encontrado",  
+#             "data": product.to_dict()
+#         }), 200
+#     else:    
+#         return jsonify({
+#             "message": "Producto no encontrado"
+#             }), 404
 @products_api.route('/import_products', methods=['POST'])
 def import_products():
     file = request.files['file']
@@ -119,12 +119,13 @@ def import_products():
 @products_api.route('/create_product', methods=['POST']) 
 def add_product():
     if 'image' not in request.files:
+        logging.info("No se ha seleccionado ninguna imagen")
         return jsonify({"message": "No se ha seleccionado ninguna imagen"}), 400
 
     image = request.files['image']
     if image.filename == "":
         return jsonify({"message": "Nombre de archivo vacío"}), 400
-    image_path = r'C:\dev\Sistemas\CRM\crm-frontend-app\src\assets\images\products'
+    image_path = r'C:\dev\Sistemas\CRM\crm-frontend-app\src\assets\images'
     UPLOAD_FOLDER = os.path.join(os.getcwd(), image_path)
     if not os.path.exists(UPLOAD_FOLDER):
         os.makedirs(UPLOAD_FOLDER)

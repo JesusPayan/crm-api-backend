@@ -94,6 +94,15 @@ class Transaction(db.Model):
                 Transaction_amount=amount,
                 Transaction_description="Complete"
             )
+        elif type == 3:
+            type_desc = "Agregar Fondos"
+            new_transaction = Transaction(
+                Transaction_type_id=type,
+                Transaction_type_desc=type_desc,
+                Transaction_date=datetime.now().date(),
+                Transaction_amount=amount,
+                Transaction_description="Complete"
+            )
         
         try:
             db.session.add(new_transaction)
@@ -113,11 +122,14 @@ class Transaction(db.Model):
             # obtenemos los egresos e ingresos
             invents = db.session.query(db.func.sum(Transaction.Transaction_amount)).filter(Transaction.Transaction_type_id == 2)
             income = db.session.query(db.func.sum(Transaction.Transaction_amount)).filter(Transaction.Transaction_type_id == 1)
+            
             #Formateamos el valor recibido de la base de datos
             income_value = income.scalar() or Decimal('0.00')
             invest_value = invents.scalar() or Decimal('0.00')
             #calculamos el balance
             balance = income_value - invest_value
+            if balance <= 0:
+                balance = db.session.query(db.func.sum(Transaction.Transaction_amount)).filter(Transaction.Transaction_type_id == 3).scalar()
             
             logger.info(f"Ingresos {income.scalar()} - Egresos {invents.scalar()} = balance: {balance}")
             if balance < 0:

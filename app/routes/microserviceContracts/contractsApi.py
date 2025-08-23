@@ -7,6 +7,8 @@ from app.models.contract_summary import ContractSummary
 from sqlalchemy.exc import SQLAlchemyError
 from app import db
 from datetime import datetime, timedelta
+import os
+import logging
 
 contracts_api = Blueprint('contractsApi', __name__)
 print("contracts_api")
@@ -49,7 +51,7 @@ def delete_contract(id):
         print("DELETE /contract endpoint reached", id)
         contract_deleted = delete_contract_by_id(id)
         if contract_deleted:
-            return jsonify({'message': 'Contract deleted successfully'}), 200
+            return jsonify({'message': 'Contrato eliminado correctamente'}), 200
         else:
             return jsonify({'message': 'Error deleting contract'}), 400
 
@@ -134,7 +136,22 @@ def update_contract_by_id(self, id, data):
             return None
 def delete_contract_by_id(id):
     logger.info(f"Deleting contract with id: {id}")
+    
     contract = Contract.query.filter_by(id=id).first()
+    dict_contract = contract.to_dict()
+    contract_type = dict_contract['contract_type_desc']
+    product_id = dict_contract['product_id']
+    # // recuperamos el perfil o perfiles contratados que estaba contratado
+    product_to_update = Product.query.filter_by(id=product_id).first()
+    logging.info(f"Producto contratado", product_to_update.to_dict())
+    if contract_type == 'Perfil':
+        product_to_update.available_profiles = product_to_update.available_profiles + 1
+        product_to_update.active_profiles = product_to_update.active_profiles - 1
+    elif contract_type == 'Completa' or contract_type == 'Cuenta completa':
+        product_to_update.available_profiles = product_to_update.available_profiles + Product.total_profiles
+        product_to_update.active_profiles = product_to_update.active_profiles - Product.total_profiles
+    db.session.commit()
+    
     if contract:
         db.session.delete(contract)
         db.session.commit()
