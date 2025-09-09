@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from flask import jsonify
 import numbers
 import logging
-from html.parser import commentclose
+# from html.parser import commentclose
 from flask.globals import current_app
 
 # Tabla: product

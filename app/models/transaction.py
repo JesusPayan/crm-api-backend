@@ -63,6 +63,7 @@ class Transaction(db.Model):
         transaction = db.session.query(Transaction).filter_by(id=id).delete()
         db.session.commit()
         return transaction
+    @staticmethod
     def add_transaction(type, amount, client_id, contract_id):
         logger.info(f"Adding transaction with type: {type}, amount: {amount}, client_id: {client_id}, contract_id: {contract_id}")
         
