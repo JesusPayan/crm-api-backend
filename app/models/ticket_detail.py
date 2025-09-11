@@ -12,13 +12,13 @@ class ticket_detail(db.Model):
     __tablename__ = 'ticket_detail'
 
     id = Column(Integer, primary_key=True)
-    ticket_id = Column(Integer, ForeignKey('ticket.id'), nullable=False)
+    ticket_id = Column(Integer, ForeignKey('tickets.id'), nullable=False)
     comments = Column(String(255))
     created_at = Column(TIMESTAMP, default=datetime.utcnow)
     updated_at = Column(TIMESTAMP, default=datetime.utcnow, onupdate=datetime.utcnow)
-    user_id = Column(Integer, ForeignKey('user.id'), nullable=False)
+    # user_id = Column(Integer, ForeignKey('user.id'), nullable=False)
 
-    ticket = relationship('Ticket', backref='details', lazy=True)
+    # ticket = relationship('Ticket', backref='details', lazy=True)
     
     def to_dict(self):
         return {

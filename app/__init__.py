@@ -42,6 +42,7 @@ def create_app():
     from app.routes.microserviceContracts.contractsApi import contracts_api
     from app.routes.microserviceCatalogs.catalogsApi import catalogs_api
     from app.routes.microserviceTransactions.transactionsApi import transaction_api
+    from app.routes.microserviceTickets.ticketsApi import tickets_api
     from app.routes.test_routes import test_bp
     app.register_blueprint(test_bp)
     app.register_blueprint(clients_api, url_prefix="/v1/clients")
@@ -49,7 +50,7 @@ def create_app():
     app.register_blueprint(contracts_api, url_prefix="/v1/contracts")
     app.register_blueprint(catalogs_api, url_prefix="/v1/catalogs")
     app.register_blueprint(transaction_api, url_prefix="/v1/transactions")
-    
+    app.register_blueprint(tickets_api, url_prefix="/v1/tickets")
     
     print("\n📜 Rutas registradas en Flask:")
     
