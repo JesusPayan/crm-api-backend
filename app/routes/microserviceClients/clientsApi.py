@@ -105,8 +105,11 @@ def update_client():
 @clients_api.route('/delete_client_by_id/<int:id>', methods=['DELETE'])
 def delete_client(id):
         logger.info("clientsApi.py: Deleting a client by id")
-        delete_client_by_id(id)
-        return {"message": "Client deleted"},200
+        delete_client = delete_client_by_id(id)
+        if delete_client:
+            return jsonify({"message": "Client deleted"}), 200
+        else:
+            return {"message": "Client not deleted"},200
 
 __all__ = ['client_api']
 

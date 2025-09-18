@@ -5,7 +5,10 @@ from sqlalchemy.orm import relationship
 from app.logger import logger
 from datetime import datetime, timedelta
 from flask import jsonify
+from app.models.transaction import Transaction
+from app.models.contract import Contract
 import numbers
+import logging
 
 
 
@@ -33,8 +36,23 @@ class Client(db.Model):
 
     @staticmethod
     def delete_client(id):
-        client = db.session.query(Client).filter_by(id=id).delete()
-        db.session.commit()
+        deleted_client = False
+        logging.info(f"model Client: Deleting client by id: {id}")
+        client = db.session.query(Client).filter_by(id=id)
+        client_id = client.first().id
+        logging.info(f"model Client: Deleting client by id: {client_id}")
+        try:
+            #borramos actualizamos la tabla account y luego borramos el cliente
+            
+            db.session.query(Contract).filter(Contract.client_id == client_id).delete()
+            db.session.query(Transaction).filter(Transaction.client_id == client_id).delete()
+            client.delete()
+            db.session.commit()
+            deleted_client = True
+        except Exception as e:
+            db.session.rollback()
+            logging.error(f"Error deleting client: {str(e)}")
+            deleted_client = False
         return client
 
     @staticmethod
