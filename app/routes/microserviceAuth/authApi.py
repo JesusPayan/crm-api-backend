@@ -43,19 +43,23 @@ auth_api = Blueprint('authApi', __name__)
 def register_user():
     data = request.json
     try:
+        # creamos el usuario en kaycloak
         user_id = keycloak_admin.create_user({
             "email": data["email"],
             "username": data["email"],  # recomendable
             "enabled": True,
             "firstName": data.get("firstName", ""),
             "lastName": data.get("lastName", ""),
+            "attributes": {
+                "phone": data["phone"],   # ✅ los campos custom van en attributes
+            },  
             "credentials": [{
                 "value": data["password"],
                 "type": "password",
                 "temporary": False
             }]
         })
-
+        logging.info(f"User created with id: {user_id}")
         return jsonify({"message": "Usuario creado", "user_id": user_id}), 201
     except Exception as e:
         logging.error(f"Error creating user: {str(e)}")
