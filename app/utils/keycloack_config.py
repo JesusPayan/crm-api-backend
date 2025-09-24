@@ -1,5 +1,5 @@
 import os
-from keycloak import KeycloakAdmin
+from keycloak import KeycloakAdmin, KeycloakOpenID
 
 # Variables de entorno (recomendado)
 # KEYCLOAK_SERVER_URL = os.getenv("KEYCLOAK_SERVER_URL", "http://localhost:8080/")
@@ -19,7 +19,7 @@ KEYCLOAK_SERVER_URL="http://localhost:8080/"
 KEYCLOAK_REALM="crm-users"
 KEYCLOAK_CLIENT_ID="flask-api-client"
 KEYCLOAK_CLIENT_SECRET="CHANGE_ME_SECRET"
-
+KEYCLOAK_REDIRECT_URI="http://localhost:5000/callback"
 # Inicializar conexión segura con Keycloak usando service account
 keycloak_admin = KeycloakAdmin(
     server_url=KEYCLOAK_SERVER_URL,
@@ -29,4 +29,12 @@ keycloak_admin = KeycloakAdmin(
     client_id=KEYCLOAK_CLIENT_ID,
     client_secret_key=KEYCLOAK_CLIENT_SECRET,
     verify=False
+)
+
+keycloak_openid = KeycloakOpenID(
+    server_url=KEYCLOAK_SERVER_URL,
+    client_id=KEYCLOAK_CLIENT_ID,
+    realm_name=KEYCLOAK_REALM,
+    client_secret_key=KEYCLOAK_CLIENT_SECRET,
+    verify=False,
 )

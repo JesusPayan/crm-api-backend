@@ -4,6 +4,8 @@ from dotenv import load_dotenv
 from flask_migrate import Migrate
 from flask_cors import CORS
 from keycloak import KeycloakAdmin
+from flask_session import Session
+from keycloak import KeycloakOpenID
 
 # from app.routes.microserviceProducts.productsApi import products_api
 # from app.routes.microserviceContracts.contractsApi import contracts_api
@@ -17,7 +19,7 @@ def create_app():
     load_dotenv()
     # se detecta el entorno que se esta ejecutando
     env = os.getenv('FLASK_ENV', 'development')
-    
+    print(f"Entorno: {env}")
     app = Flask(__name__)
     app.config.from_object('app.config.Config')
     CORS(app)
@@ -28,8 +30,8 @@ def create_app():
     # app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
     app.secret_key = '!secret'
     
-    
-
+    app.config["SESSION_TYPE"] = "filesystem"
+    Session(app)
     if env == 'development':
         print("ENTORNO DESARROLLO")
         app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DB_URL_DEV')

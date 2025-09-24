@@ -22,6 +22,9 @@ class User(db.Model):
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    user_subscription_start_date = db.Column(db.DateTime, nullable=True)  # Nuevo campo para fecha de inicio
+    user_subscription_end_date = db.Column(db.DateTime, nullable=True)    # Nuevo campo para fecha de fin
+    user_subscription_days_left = db.Column(db.Integer, default=0)  # Nuevo campo para días restantes
     subscription_status_id = db.Column(db.String(255), nullable=False)
     subscription_status_description = db.Column(db.String(255), nullable=False)
     
@@ -60,7 +63,7 @@ class User(db.Model):
         new_user = User(
             first_name=data.get("first_name"),
             last_name=data.get("last_name"),
-            username=data.get("username"),
+            username=data.get("username") or data.get("email"),
             email=data.get("email"),
             password=data.get("password"),  # Consider hashing the password
             phone=data.get("phone"),
