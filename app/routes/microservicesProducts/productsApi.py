@@ -8,7 +8,7 @@ from app import db
 import logging
 import os
 from sqlalchemy import text
-from app.utils import get_list_from_csv
+from app.utils.utils import get_list_from_csv
 
 products_api = Blueprint('productsApi', __name__)
 

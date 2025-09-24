@@ -3,6 +3,8 @@ from flask_sqlalchemy import SQLAlchemy
 from dotenv import load_dotenv
 from flask_migrate import Migrate
 from flask_cors import CORS
+from keycloak import KeycloakAdmin
+
 # from app.routes.microserviceProducts.productsApi import products_api
 # from app.routes.microserviceContracts.contractsApi import contracts_api
 
@@ -24,7 +26,10 @@ def create_app():
     # UPLOAD_FOLDER = 'uploads'
     # os.makedirs(UPLOAD_FOLDER, exist_ok=True)
     # app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+    app.secret_key = '!secret'
     
+    
+
     if env == 'development':
         print("ENTORNO DESARROLLO")
         app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DB_URL_DEV')
@@ -43,6 +48,8 @@ def create_app():
     from app.routes.microserviceCatalogs.catalogsApi import catalogs_api
     from app.routes.microserviceTransactions.transactionsApi import transaction_api
     from app.routes.microserviceTickets.ticketsApi import tickets_api
+    from app.routes.microserviceAuth.authApi import auth_api
+    
     from app.routes.test_routes import test_bp
     app.register_blueprint(test_bp)
     app.register_blueprint(clients_api, url_prefix="/v1/clients")
@@ -51,7 +58,7 @@ def create_app():
     app.register_blueprint(catalogs_api, url_prefix="/v1/catalogs")
     app.register_blueprint(transaction_api, url_prefix="/v1/transactions")
     app.register_blueprint(tickets_api, url_prefix="/v1/tickets")
-    
+    app.register_blueprint(auth_api, url_prefix="/v1/auth")
     print("\n📜 Rutas registradas en Flask:")
     
     for rule in app.url_map.iter_rules():
