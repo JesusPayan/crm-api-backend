@@ -27,7 +27,7 @@ class User(db.Model):
     user_subscription_days_left = db.Column(db.Integer, default=0)  # Nuevo campo para días restantes
     subscription_status_id = db.Column(db.String(255), nullable=False)
     subscription_status_description = db.Column(db.String(255), nullable=False)
-    
+
     def to_dict(self):
         return {
             "id": self.id,
