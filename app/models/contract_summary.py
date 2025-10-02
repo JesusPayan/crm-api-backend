@@ -1,38 +1,3 @@
-# from app import db
-# from sqlalchemy import Column, Integer, String, Date, TIMESTAMP, DECIMAL
-# from sqlalchemy.sql import text
-# from app.models.contract import Contract
-# class ContractSummary(db.Model):
-#     __tablename__ = 'contract_sumary'
-
-#     id = Column(Integer, primary_key=True)
-#     client_name = Column(String(255))
-#     product_name = Column(String(255))
-#     contract_type_desc = Column(String(100))
-#     start_date = Column(Date)
-#     end_date = Column(Date)
-#     status_desc = Column(String(100))
-#     total_price = Column(DECIMAL(10, 2))
-#     created_at = Column(TIMESTAMP)
-
-#     def to_dict(self):
-#         return {c.name: getattr(self, c.name) for c in self.__table__.columns}
-
-#     @staticmethod
-#     def get_all():
-#         try:
-#             # contracts = db.session.query(ContractSummary).all()
-#             # return contracts, "Contratos obtenidos exitosamente"
-#             contracts = db.session.query(Contract).from_statement(
-#             text("SELECT * FROM contract_sumary")
-#         ).all()
-#             return contracts, "Contratos obtenidos exitosamente"
-#         except Exception as e:
-#             from app.logger import logger
-#             logger.error(f"Error al obtener contratos: {str(e)}")
-#             return [], "Error al obtener contratos"
-
-# app/models/contract_summary.py
 from app import db
 from sqlalchemy import Column, Integer, String, Date, TIMESTAMP, DECIMAL
 from sqlalchemy.sql import text

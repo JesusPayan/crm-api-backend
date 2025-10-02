@@ -67,10 +67,16 @@ def register_user():
             "emailVerified": True,
             "enabled": True
         })
-        data["user_id"] = user_id
-        new_user = User.save_new_user(data)
-        logging.info(f"User created with id: {user_id}")
-        return jsonify({"message": "Usuario creado", "user_id": user_id}), 201
+        if user_id is None:
+            logging.error("❌ No se pudo crear el usuario en Keycloak")
+            return jsonify({"error": "No se pudo crear el usuario "}), 400
+        else:
+            logging.info(f"Usuario creado en Keycloak con id: {user_id}")
+            # guardamos el usuario en nuestra base de datos
+            data["user_id"] = user_id
+            new_user = User.save_new_user(data)
+            logging.info(f"User created with id: {user_id}")
+            return jsonify({"message": "Usuario creado", "user_id": user_id}), 201
     except KeycloakPostError as e:
         logging.error(f"❌ Error creando usuario: {e}", exc_info=True)
         return jsonify({"error": "Error creando usuario", "details": str(e)}), 400
@@ -99,19 +105,6 @@ def get_service_token():
 # LOGIN - inicia el flujo OAuth
 # ============================
 @auth_api.route("/login", methods=["POST"])
-
-# def login():
-#     try:
-#         auth_url = keycloak_openid.auth_url(
-#             redirect_uri=KEYCLOAK_REDIRECT_URI,
-#             scope="openid email profile",
-#             state="random_state_string"
-#         )
-#         logging.info(f"Redirecting to Keycloak auth URL: {auth_url}")
-#         return redirect(auth_url)
-#     except Exception as e:
-#         logging.error(f"Error iniciando login: {str(e)}", exc_info=True)
-#         return jsonify({"error": "Error iniciando login con Keycloak"}), 500
 def login():
     try:
         data = request.get_json()
@@ -119,19 +112,26 @@ def login():
         password = data.get("password")
 
         if not email or not password:
-            return jsonify({"error": "Username and password required"}), 400
+            return jsonify({"error": "Username and password required"}), 404
 
         # Usamos KeycloakOpenID (no el Service Account) para autenticar al usuario
         token = keycloak_openid.token(username=email, password=password)
-        user_id  = keycloak_admin.get_user_id(email)
+        user_keycloak_id  = keycloak_admin.get_user_id(email)
+        backend_user_id = User.get_by_keycloak_id(user_keycloak_id)
+        if not backend_user_id:
+            return jsonify({"error": "Usuario no encontrado en la base de datos"}), 404
+        else:
+            backend_user_id = backend_user_id.id
         logging.info(f"User {email} logged in successfully")
         
         return jsonify({
+            "message": "Login successful",
             "access_token": token.get("access_token"),
             "refresh_token": token.get("refresh_token"),
             "expires_in": token.get("expires_in"),
             "id_token": token.get("id_token"),
-            "user_id": user_id
+            "keycloak_user_id": user_keycloak_id,
+            "backend_user_id": backend_user_id
         }), 200
 
     except Exception as e:
@@ -234,4 +234,4 @@ def logout():
         return redirect(logout_url)
     except Exception as e:
         logging.error(f"Error cerrando sesión: {str(e)}")
-        return jsonify({"error": "Error cerrando sesión"}), 500
+        return jsonify({"error": "Error cerrando sesión"}), 500   

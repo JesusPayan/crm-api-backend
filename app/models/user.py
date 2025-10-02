@@ -9,6 +9,7 @@ from app.models.transaction import Transaction
 from app.models.contract import Contract
 import numbers
 import logging
+from sqlalchemy.dialects.mssql.information_schema import key_constraints
 
 class User(db.Model):
     __tablename__ = 'users'
@@ -20,6 +21,7 @@ class User(db.Model):
     password = db.Column(db.String(255), nullable=False)
     phone = db.Column(db.String(20), nullable=True)
     is_active = db.Column(db.Boolean, default=True)
+    key_cloak_id = db.Column(db.String(255), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     user_subscription_start_date = db.Column(db.DateTime, nullable=True)  # Nuevo campo para fecha de inicio
@@ -46,7 +48,17 @@ class User(db.Model):
     @staticmethod
     def get_by_id(user_id):
         return User.query.get(user_id)
-    
+    @staticmethod
+    def get_by_keycloak_id(keycloak_id):
+        logging.debug(f"Searching for user with Keycloak ID: {keycloak_id}")
+        keycloak_id = str(keycloak_id)  # Asegurarse de que sea una cadena
+        keycloak_id_found = User.query.filter_by(key_cloak_id=keycloak_id).first() # Consulta para depuración
+        if not keycloak_id_found:
+            logging.debug(f"No user found with Keycloak ID: {keycloak_id}")
+        else:
+            logging.debug(f"User found: {keycloak_id_found.to_dict()}")
+            return keycloak_id_found
+        
     @staticmethod
     def get_by_email(email):
         return User.query.filter_by(email=email).first()
@@ -68,6 +80,10 @@ class User(db.Model):
             password=data.get("password"),  # Consider hashing the password
             phone=data.get("phone"),
             is_active=data.get("is_active", True),
+            key_cloak_id=data.get("user_id"),
+            user_subscription_start_date=datetime.now(),
+            user_subscription_end_date=datetime.now() + timedelta(days=30),
+            user_subscription_days_left=30,
             subscription_status_id=data.get("subscription_status_id", "1"),
             subscription_status_description=data.get("subscription_status_description", "Active")
         )
