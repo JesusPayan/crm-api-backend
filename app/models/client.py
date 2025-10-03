@@ -138,7 +138,19 @@ class Client(db.Model):
             return new_client, "Cliente creado exitosamente"
         except Exception as e:
             logger.error(f"Error creating new client: {str(e)}")
-
+    @staticmethod
+    def get_by_user(user_id):
+        logger.info(f"models.py: Getting clients by user id: {user_id}")
+        found_clients = []
+        clients = db.session.query(Client).filter_by(created_by=user_id).all()
+        for client in clients:
+            logger.info(f"Found client: {client.to_dict()}")
+            client = client.to_dict()
+            logger.info(f"Found client: {client}")
+            found_clients.append(client)
+        if not found_clients:
+            return [], "No se encontraron clientes"
+        return found_clients
     def to_dict(self):
         return {
             "id": self.id,

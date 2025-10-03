@@ -41,7 +41,7 @@ auth_api = Blueprint('authApi', __name__)
 #         return jsonify({"error": "Credenciales inválidas"}), 401
 @auth_api.route("/register", methods=["POST"])
 def register_user():
-    data = request.json
+    data = request.get_json()
     try:
         # creamos el usuario en kaycloak
         user_id = keycloak_admin.create_user({
@@ -125,7 +125,7 @@ def login():
         logging.info(f"User {email} logged in successfully")
         
         return jsonify({
-            "message": "Login successful",
+            "message": "Login exitoso",
             "access_token": token.get("access_token"),
             "refresh_token": token.get("refresh_token"),
             "expires_in": token.get("expires_in"),

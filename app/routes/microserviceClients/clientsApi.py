@@ -77,12 +77,18 @@ def get_contracts_summary():
         return jsonify({"message": "No clients found"}), 404
     
 
-@clients_api.route('/api/clients/<int:id>', methods=['GET'])
+@clients_api.route('/get_clients_by_id/<int:id>', methods=['GET'])
+# Endpoint para obtener los clientes creados por un usuario especifico
 def get_client_by_id(id):
         logger.info("clientsApi.py: Getting a client by id")
-        client = find_by_id(id)
-        if client:
-            return jsonify(client.to_dict())
+        clients = get_clients_by_user(id)
+        if clients:
+            print(clients)
+            print(type(clients))
+            # for client in clients:
+            #     print(f"cliente: {client.to_dict()}")
+                
+            return jsonify({"data": clients}), 200
         else:
             return jsonify({"message": "Client not found"}), 404
         
@@ -177,5 +183,11 @@ def import_new_clients(file):
         return None, f"Error al importar clientes: {str(e)}"
     
     
-    
+def get_clients_by_user(user_id):
+    logger.info(f"Getting clients by user id: {user_id}")
+    clients = Client.get_by_user(user_id)
+    if clients:
+        return clients
+    else:
+        return None, "No se encontraron clientes"
     
