@@ -43,6 +43,7 @@ auth_api = Blueprint('authApi', __name__)
 def register_user():
     data = request.get_json()
     try:
+        logging.info(f"Registering user with data: {data}")
         # creamos el usuario en kaycloak
         user_id = keycloak_admin.create_user({
             "email": data["email"],
@@ -115,6 +116,7 @@ def login():
             return jsonify({"error": "Username and password required"}), 404
 
         # Usamos KeycloakOpenID (no el Service Account) para autenticar al usuario
+        
         token = keycloak_openid.token(username=email, password=password)
         user_keycloak_id  = keycloak_admin.get_user_id(email)
         backend_user_id = User.get_by_keycloak_id(user_keycloak_id)

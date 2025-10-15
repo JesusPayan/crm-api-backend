@@ -105,7 +105,13 @@ class Product(db.Model):
         db.session.commit()
 
         return new_product, "Producto importado correctamente"
-        
+    @staticmethod
+    def get_by_user_id(user_id):
+        logger.info(f"models.py: Getting products by user id: {user_id}")
+        products = db.session.query(Product).filter_by(created_by=user_id).all()
+        if not products:
+            return None
+        return products    
     @staticmethod
     def create_new_product(data,imagePath):
         cve_internal = None

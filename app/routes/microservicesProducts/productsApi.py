@@ -11,7 +11,28 @@ from sqlalchemy import text
 from app.utils.utils import get_list_from_csv
 
 products_api = Blueprint('productsApi', __name__)
-
+@products_api.route('/get_products_by_id/<int:id>', methods=['GET'])
+def get_products_by_id(id):
+    products = []
+    print("GET /product endpoint reached", id)
+    products = get_products_by_user_id(id)
+    if products:
+        return jsonify({
+            "message": "Productos encontrados",
+            "data": [product.to_dict() for product in products]
+        }), 200
+    else:    
+        return jsonify({"message": "Productos no encontrados"}), 404
+    # product = get_by_id(id)
+    # if product:
+    #     return jsonify({
+    #         "message": "Producto encontrado",  
+    #         "data": product.to_dict()
+    #     }), 200
+    # else:    
+    #     return jsonify({
+    #         "message": "Producto no encontrado"
+    #         }), 404
 @products_api.route('/get_products_summary', methods=['GET'])
 def get_products_summary():
     products_list = ProductSummary.get_all()
@@ -75,30 +96,6 @@ def get_products():
         }), 200
     else:    
         return jsonify({"message": "Productos no encontrados"}), 404
-# @products_api.route('/get_product/<string:name>', methods=['GET'])
-# def get_product(name):
-#     print("GET /product endpoint reached")
-#     product = get_product_by_name(name)
-#     if product:
-#         return jsonify({
-#             "message": "Producto encontrado",
-#             "data": product.to_dict()
-#         }), 200
-#     else:    
-#         return jsonify({"message": "Producto no encontrado"}), 404
-# @products_api.route('/get_product_by_id/<int:id>', methods=['GET'])
-# def get_product_by_id(id):
-#     print("GET /product endpoint reached")
-#     product = get_by_id(id)
-#     if product:
-#         return jsonify({
-#             "message": "Producto encontrado",  
-#             "data": product.to_dict()
-#         }), 200
-#     else:    
-#         return jsonify({
-#             "message": "Producto no encontrado"
-#             }), 404
 @products_api.route('/import_products', methods=['POST'])
 def import_products():
     file = request.files['file']
@@ -250,3 +247,8 @@ def import_products_from_csv(file):
             logging.error(f"Error importing products from CSV: {list_imported_products}")
             return None,f"Error importing products from CSV: {list_imported_products}"
         return message,saved_product
+        return None,f"Error importing products from CSV: {list_imported_products}"
+    
+def get_products_by_user_id(id):
+        logging.info(f"Getting products by user id: {id}")
+        return Product.get_by_user_id(id)
